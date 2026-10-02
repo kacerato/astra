@@ -44,6 +44,8 @@ Referências ─► Conceito (imagem gerada) ─► Figma (tokens, componentes, 
 
 ## 2. Estrutura do arquivo Figma "Astra Editor 2"
 
+> **Arquivo criado em 02/10/2026:** https://www.figma.com/design/NGnZnbc6s0OElKeUojHSwb (estado e IDs em `design/figma/astra-editor-2.state.json`). A conta está no plano **Starter**: no máximo **3 páginas** e **1 modo por coleção**. As áreas abaixo viram **seções** em 3 páginas (*Fundamentos e Marca* = 00, 01, 08; *Componentes e Ícones* = 02, 03; *Telas* = 04–07), e a densidade Touch/Compact vira variáveis separadas (`size/row-touch`, `size/row-compact`) em vez de modos.
+
 | Página | Conteúdo |
 |---|---|
 | `00 Fundamentos` | Coleções de variáveis: **Primitivas**, **Semânticas**, **Densidade** (modos Touch/Compact), **Tipografia**, **Movimento** (documental) |

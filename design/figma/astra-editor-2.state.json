@@ -1,0 +1,44 @@
+{
+  "arquivo": "Astra Editor 2",
+  "fileKey": "NGnZnbc6s0OElKeUojHSwb",
+  "url": "https://www.figma.com/design/NGnZnbc6s0OElKeUojHSwb",
+  "conta": "Kacerato Dev (plano Starter: 3 páginas, 1 modo por coleção, assento View)",
+  "fonteDosTokens": "docs/plano-mestre/17-EDITOR-DESIGN-SYSTEM.md §3-§5",
+  "colecoes": {
+    "Primitivas": "VariableCollectionId:2:2",
+    "Semânticas": "VariableCollectionId:2:37",
+    "Dimensões": "VariableCollectionId:2:77"
+  },
+  "contagem": {
+    "Primitivas": 34,
+    "Semânticas": 39,
+    "Dimensões": 30
+  },
+  "estilosDeTexto": {
+    "Astra/display": "S:d4345c15f19064507fe8045637e15b30746ab948,",
+    "Astra/title": "S:5a5ac6c588572a085a3a5ff3128bd49e85065477,",
+    "Astra/body": "S:3aaaf6137a8983306988f116f41f6edc77d86be8,",
+    "Astra/label": "S:bc04e16829e0407f5e73b04b363d86ebf053bafd,",
+    "Astra/value": "S:baf4226143396d424b0f929de0524552d3ba8eab,",
+    "Astra/section": "S:f1a59126482566d4460a365ce5b8bdec65f8f90f,",
+    "Astra/micro": "S:4bdd3962369b8b925ab66f891eb8353899b39b1e,",
+    "Astra/code": "S:39e093c7f557ebc73d172e8e80b2f76c31271337,"
+  },
+  "estiloDeEfeito": {
+    "Astra/elevation/float": "S:d000ba0c868a50206bb3d8f32c55134caeaee14e,"
+  },
+  "paginas": {
+    "Fundamentos e Marca": "0:1",
+    "Componentes e Ícones": "2:128",
+    "Telas": "2:129"
+  },
+  "etapas": [
+    "tokens",
+    "estilos",
+    "paginas",
+    "prancha-fundamentos"
+  ],
+  "nos": {
+    "pranchaFundamentos": "3:2"
+  }
+}
