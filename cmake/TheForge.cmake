@@ -259,7 +259,8 @@ function(astra_fsl_shaders target)
         COMMAND ${CMAKE_COMMAND} -E touch "${stamp}"
         DEPENDS ${fsl_deps}
         COMMENT "FSL ${list_name} -> ${TF_FSL_LANGUAGE}"
-        VERBATIM)
+        VERBATIM
+        COMMAND_EXPAND_LISTS) # em Release o $<...:--debug> fica vazio e não pode virar argumento ""
     add_custom_target(${target}_fsl_${list_name} DEPENDS "${stamp}")
     add_dependencies(${target} ${target}_fsl_${list_name})
 endfunction()

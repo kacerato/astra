@@ -1,0 +1,16 @@
+#include "rmlui.srt.h"
+
+STRUCT(VSOutput)
+{
+    DATA(float4, Position, SV_Position);
+    DATA(float4, Color, COLOR);
+    DATA(float2, TexCoord, TEXCOORD0);
+};
+
+ROOT_SIGNATURE(DefaultRootSignature)
+float4 PS_MAIN(VSOutput In)
+{
+    INIT_MAIN;
+    // Cores e texturas com alfa pré-multiplicado (contrato da RmlUi 6). Geometria sem textura usa um texel branco.
+    RETURN(SampleTex2D(gTexture, gSampler, In.TexCoord) * In.Color);
+}

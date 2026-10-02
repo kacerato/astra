@@ -1,0 +1,37 @@
+#include "rmlui.srt.h"
+
+STRUCT(VSInput)
+{
+    DATA(float2, Position, POSITION);
+    DATA(float4, Color, COLOR);
+    DATA(float2, TexCoord, TEXCOORD0);
+};
+
+STRUCT(VSOutput)
+{
+    DATA(float4, Position, SV_Position);
+    DATA(float4, Color, COLOR);
+    DATA(float2, TexCoord, TEXCOORD0);
+};
+
+ROOT_SIGNATURE(DefaultRootSignature)
+VSOutput VS_MAIN(VSInput In, SV_InstanceID(uint) DrawIndex)
+{
+    INIT_MAIN;
+    VSOutput Out;
+    // firstInstance = índice do draw (no Vulkan o SV_InstanceID do FSL é gl_InstanceIndex, que já o inclui).
+    uint   base = DrawIndex * 5;
+    float2 p = In.Position + gDraws[base + 4].xy;
+    // Matriz coluna-maior (projeção * transformação RCSS * pré-rotação), aplicada a (x, y, 0, 1).
+    Out.Position = gDraws[base + 0] * p.x + gDraws[base + 1] * p.y + gDraws[base + 3];
+    // A RmlUi entrega cores sRGB (pré-multiplicadas); a swapchain sRGB espera valores lineares.
+    // Despré-multiplica, converte sRGB -> linear (curva exata) e pré-multiplica de novo.
+    float  a = In.Color.a;
+    float3 c = a > 0.0f ? In.Color.rgb / a : float3(0.0f, 0.0f, 0.0f);
+    float3 lo = c / 12.92f;
+    float3 hi = pow((c + 0.055f) / 1.055f, float3(2.4f, 2.4f, 2.4f));
+    c = lerp(hi, lo, float3(step(c, float3(0.04045f, 0.04045f, 0.04045f))));
+    Out.Color = float4(c * a, a);
+    Out.TexCoord = In.TexCoord;
+    RETURN(Out);
+}

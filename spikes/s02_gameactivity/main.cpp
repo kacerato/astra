@@ -17,6 +17,9 @@
 //
 // S-08 (Luau no contexto de app, onde a política de memória executável difere da do adb shell):
 //   debug.astra.s02.luau       1 = roda a suíte do S-08 uma vez ao iniciar (resultado no log, prefixo "S08:")
+//
+// S-07 (Astra UI / RmlUi):
+//   debug.astra.s02.ui         1 = desenha o painel de UI por cima do triângulo e roda o benchmark do Inspector
 
 #include <android/log.h>
 #include <android/native_window.h>
@@ -49,6 +52,7 @@
 #include "shaders/Global.srt.h"
 
 #include "luau_suite.h" // spike S-08
+#include "ui_spike.h"   // spike S-07
 
 #include "Common_3/Utilities/Interfaces/IMemory.h"
 
@@ -104,6 +108,9 @@ struct Spike
     DescriptorSet* setPerFrame = nullptr;
     SwapChain*     swapChain = nullptr;
     RenderTarget*  depth = nullptr; // S-05: anexo só no tile (TEXTURE_CREATION_FLAG_ON_TILE)
+    TinyImageFormat depthFormat = TinyImageFormat_D24_UNORM_S8_UINT; // com stencil: máscara de recorte da UI (S-07)
+    bool           uiEnabled = false;
+    bool           uiReady = false;
 
     bool     resumed = false;
     bool     keyboardVisible = false;
@@ -346,6 +353,8 @@ bool initRendererObjects(Spike& s)
     return true;
 }
 
+void initUi(Spike& s);
+
 void addPipelineFor(Spike& s, TinyImageFormat format)
 {
     if (s.pipeline && s.pipelineFormat == format)
@@ -384,7 +393,7 @@ void addPipelineFor(Spike& s, TinyImageFormat format)
     gfx.pVertexLayout = &layout;
     gfx.pRasterizerState = &raster;
     gfx.pDepthState = &depthState;
-    gfx.mDepthStencilFormat = TinyImageFormat_D32_SFLOAT;
+    gfx.mDepthStencilFormat = s.depthFormat;
     addPipeline(s.renderer, &desc, &s.pipeline);
     s.pipelineFormat = format;
 }
@@ -436,8 +445,9 @@ void createSwapchain(Spike& s)
     depthDesc.mDepth = 1;
     depthDesc.mWidth = s.swapChain->ppRenderTargets[0]->mWidth;
     depthDesc.mHeight = s.swapChain->ppRenderTargets[0]->mHeight;
-    depthDesc.mFormat = TinyImageFormat_D32_SFLOAT;
+    depthDesc.mFormat = s.depthFormat;
     depthDesc.mClearValue.depth = 0.0f;
+    depthDesc.mClearValue.stencil = 0;
     depthDesc.mStartState = RESOURCE_STATE_DEPTH_WRITE;
     depthDesc.mSampleCount = SAMPLE_COUNT_1;
     depthDesc.mFlags = TEXTURE_CREATION_FLAG_ON_TILE;
@@ -449,6 +459,8 @@ void createSwapchain(Spike& s)
 
     addPipelineFor(s, s.swapChain->ppRenderTargets[0]->mFormat);
     ++s.swapchainsCreated;
+    if (s.uiEnabled && !s.uiReady)
+        initUi(s);
     RenderTarget* rt = s.swapChain->ppRenderTargets[0];
     LOGF(eINFO, "S02: swapchain #%u janela %ux%u, imagem %ux%u, pré-rotação %u°, %u imagens, %s", s.swapchainsCreated, desc.mWidth,
          desc.mHeight, rt->mWidth, rt->mHeight, s.swapChain->mPreRotationDegrees, desc.mImageCount, TinyImageFormat_Name(desc.mColorFormat));
@@ -480,6 +492,12 @@ void recreateSwapchainIfResized(Spike& s)
 void onTextState(void* ctx, const GameTextInputState* state)
 {
     Spike& s = *(Spike*)ctx;
+    if (s.uiReady)
+    {
+        std::string text(state->text_UTF8, (size_t)state->text_length);
+        UiSpike::textInput(text.c_str(), state->selection.start, state->selection.end, state->composingRegion.start,
+                           state->composingRegion.end);
+    }
     s.text.assign(state->text_UTF8, (size_t)state->text_length);
     s.composeStart = state->composingRegion.start;
     s.composeEnd = state->composingRegion.end;
@@ -498,6 +516,31 @@ void toggleKeyboard(Spike& s)
     // Sem a tela cheia de extração do teclado em paisagem (lição da Astra 1: escondia Aplicar/Cancelar).
     GameActivity_setImeEditorInfo(act, TYPE_CLASS_TEXT, IME_ACTION_DONE, IME_FLAG_NO_EXTRACT_UI);
     GameActivity_showSoftInput(act, 0);
+}
+
+// ---------------------------------------------------------------------------
+// S-07: UI
+// ---------------------------------------------------------------------------
+void initUi(Spike& s)
+{
+    GameActivity*    act = s.app->activity;
+    const float      dpRatio = (float)AConfiguration_getDensity(s.app->config) / 160.0f;
+    UiKeyboardBridge keyboard;
+    keyboard.show = [act](const char* text, int selStart, int selEnd) {
+        GameTextInputState state = {};
+        state.text_UTF8 = text;
+        state.text_length = (int32_t)strlen(text);
+        state.selection = { selStart, selEnd };
+        state.composingRegion = { -1, -1 };
+        GameActivity_setTextInputState(act, &state);
+        GameActivity_setImeEditorInfo(act, TYPE_CLASS_TEXT, IME_ACTION_DONE, IME_FLAG_NO_EXTRACT_UI);
+        GameActivity_showSoftInput(act, 0);
+    };
+    keyboard.hide = [act]() { GameActivity_hideSoftInput(act, 0); };
+    s.uiReady = UiSpike::init(s.renderer, s.swapChain->ppRenderTargets[0]->mFormat, s.depthFormat, "/system/fonts/Roboto-Regular.ttf",
+                              dpRatio, keyboard);
+    if (s.uiReady)
+        UiSpike::runInspectorBenchmark(300);
 }
 
 // ---------------------------------------------------------------------------
@@ -542,6 +585,8 @@ void onAppCmd(android_app* app, int32_t cmd)
     }
     case APP_CMD_EDITOR_ACTION:
         LOGF(eINFO, "S02: ação do editor %d, texto final='%s'", app->editorAction, s.text.c_str());
+        if (s.uiReady)
+            UiSpike::editorDone();
         GameActivity_hideSoftInput(app->activity, 0);
         break;
     default:
@@ -558,6 +603,26 @@ void processInput(Spike& s)
     {
         const GameActivityMotionEvent& e = input->motionEvents[i];
         const int32_t action = e.action & AMOTION_EVENT_ACTION_MASK;
+        if (s.uiReady)
+        {
+            const int32_t idx = (e.action & AMOTION_EVENT_ACTION_POINTER_INDEX_MASK) >> AMOTION_EVENT_ACTION_POINTER_INDEX_SHIFT;
+            if (action == AMOTION_EVENT_ACTION_MOVE)
+            {
+                for (uint32_t p = 0; p < e.pointerCount; ++p)
+                    UiSpike::touch(1, e.pointers[p].id, GameActivityPointerAxes_getX(&e.pointers[p]), GameActivityPointerAxes_getY(&e.pointers[p]));
+            }
+            else
+            {
+                const int kind = (action == AMOTION_EVENT_ACTION_DOWN || action == AMOTION_EVENT_ACTION_POINTER_DOWN) ? 0
+                                 : (action == AMOTION_EVENT_ACTION_UP || action == AMOTION_EVENT_ACTION_POINTER_UP)   ? 2
+                                 : action == AMOTION_EVENT_ACTION_CANCEL                                              ? 3
+                                                                                                                      : -1;
+                if (kind >= 0)
+                    UiSpike::touch(kind, e.pointers[idx].id, GameActivityPointerAxes_getX(&e.pointers[idx]),
+                                   GameActivityPointerAxes_getY(&e.pointers[idx]));
+            }
+            continue;
+        }
         // Toque curto (< 300 ms) com um dedo abre/fecha o teclado.
         if (action == AMOTION_EVENT_ACTION_UP && e.pointerCount == 1 && (e.eventTime - e.downTime) < 300000000LL)
             toggleKeyboard(s);
@@ -585,6 +650,9 @@ void drawFrame(Spike& s, float dt)
     FrameData      frame;
     frame.transform = preRotation * mat4::scale(w < h ? vec3(1.0f, w / h, 1.0f) : vec3(h / w, 1.0f, 1.0f)) * mat4::rotationZ(s.angle);
     frame.tint = s.keyboardVisible ? vec4(0.55f, 0.75f, 1.0f, 1.0f) : vec4(1.0f);
+
+    if (s.uiReady)
+        UiSpike::update((uint32_t)w, (uint32_t)h);
 
     uint32_t imageIndex = 0;
     acquireNextImage(s.renderer, s.swapChain, s.imageAcquired, nullptr, &imageIndex);
@@ -616,7 +684,7 @@ void drawFrame(Spike& s, float dt)
     BindRenderTargetsDesc bind = {};
     bind.mRenderTargetCount = 1;
     bind.mRenderTargets[0] = { target, LOAD_ACTION_CLEAR };
-    bind.mDepthStencil = { s.depth, LOAD_ACTION_CLEAR, LOAD_ACTION_DONTCARE, STORE_ACTION_DONTCARE, STORE_ACTION_DONTCARE };
+    bind.mDepthStencil = { s.depth, LOAD_ACTION_CLEAR, LOAD_ACTION_CLEAR, STORE_ACTION_DONTCARE, STORE_ACTION_DONTCARE };
     cmdBindRenderTargets(cmd, &bind);
     cmdSetViewport(cmd, 0.0f, 0.0f, (float)target->mWidth, (float)target->mHeight, 0.0f, 1.0f);
     cmdSetScissor(cmd, 0, 0, target->mWidth, target->mHeight);
@@ -626,6 +694,8 @@ void drawFrame(Spike& s, float dt)
     cmdBindDescriptorSet(cmd, s.frameIndex, s.setPerFrame);
     cmdBindVertexBuffer(cmd, 1, &s.vertexBuffer, &stride, nullptr);
     cmdDraw(cmd, 3, 0);
+    if (s.uiReady)
+        UiSpike::render(cmd, s.frameIndex, target->mWidth, target->mHeight, preRot);
     cmdBindRenderTargets(cmd, nullptr);
     barrier = { target, RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_PRESENT };
     cmdResourceBarrier(cmd, 0, nullptr, 0, nullptr, 1, &barrier);
@@ -683,6 +753,11 @@ void drawFrame(Spike& s, float dt)
 
 void shutdown(Spike& s)
 {
+    if (s.uiReady)
+    {
+        waitQueueIdle(s.queue);
+        UiSpike::exit();
+    }
     destroySwapchain(s);
     if (s.renderer)
     {
@@ -749,7 +824,12 @@ extern "C" void android_main(android_app* app)
     if (readDebugProp("debug.astra.s02.luau", 0))
         runLuauSuite([](const char* line) { LOGF(eINFO, "%s", line); });
 
+    s.uiEnabled = readDebugProp("debug.astra.s02.ui", 0) != 0;
     const bool rendererOk = initRendererObjects(s);
+    if (rendererOk && !(s.renderer->pGpu->mFormatCaps[TinyImageFormat_D24_UNORM_S8_UINT] & FORMAT_CAP_DEPTH_STENCIL))
+        s.depthFormat = TinyImageFormat_D32_SFLOAT_S8_UINT;
+    if (rendererOk)
+        LOGF(eINFO, "S02: depth/stencil %s, UI %s", TinyImageFormat_Name(s.depthFormat), s.uiEnabled ? "ligada" : "desligada");
     if (!rendererOk)
         LOGF(eERROR, "S02: renderer não inicializou; o loop segue só para encerrar limpo");
 

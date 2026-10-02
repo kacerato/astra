@@ -5,7 +5,8 @@ plugins {
 }
 
 val astraRoot = rootDir.resolve("../../..").canonicalFile
-val cmakeOut = astraRoot.resolve("build/android-arm64-debug")
+// -PastraPreset=android-arm64-release empacota a .so de release (medições); o padrão é o preset de debug.
+val cmakeOut = astraRoot.resolve("build/" + (findProperty("astraPreset") as String? ?: "android-arm64-debug"))
 
 android {
     namespace = "dev.astra.spike.s02"

@@ -1,0 +1,15 @@
+#include "../../../third_party/the-forge/Common_3/Graphics/FSL/defaults.h"
+
+#rootsig default.rootsig
+#end
+
+#rootsig compute.rootsig
+#end
+
+#vert rmlui.vert
+#include "rmlui.vert.fsl"
+#end
+
+#frag rmlui.frag
+#include "rmlui.frag.fsl"
+#end
