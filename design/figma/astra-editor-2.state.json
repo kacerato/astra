@@ -37,7 +37,9 @@
     "estilos",
     "paginas",
     "prancha-fundamentos",
-    "marca-vetorizada"
+    "marca-vetorizada",
+    "icones-lote-1",
+    "tela-cena-paisagem"
   ],
   "nos": {
     "pranchaFundamentos": "3:2",
@@ -45,12 +47,72 @@
     "marca256": "4:7",
     "marca64": "4:14",
     "marca24": "4:21",
-    "glyph": "4:29"
+    "glyph": "4:29",
+    "pranchaIcones": "6:2",
+    "telaCenaA_viewport": "8:2",
+    "telaCenaB_inspector": "9:141",
+    "gavetaInspector": "9:302"
   },
   "marca": {
     "fonte": "atchengine/assets/astra-visual/brand/astra-mark-512.png",
     "gerador": "tools/brand/trace_mark.py",
-    "svg": ["design/brand/astra-mark.svg", "design/brand/astra-glyph.svg"],
+    "svg": [
+      "design/brand/astra-mark.svg",
+      "design/brand/astra-glyph.svg"
+    ],
     "diferencaDePixels": "1,02%"
+  },
+  "icones": {
+    "fonte": "Lucide 1.50.0 (lucide-static, ISC, © Lucide Icons and Contributors), traço 1,75; tool-transform é desenho próprio",
+    "componentes": {
+      "panel-hierarchy": "6:12",
+      "panel-assets": "6:18",
+      "panel-search": "6:24",
+      "panel-console": "6:30",
+      "panel-inspector": "6:43",
+      "tool-view": "6:51",
+      "tool-move": "6:61",
+      "tool-rotate": "6:68",
+      "tool-scale": "6:76",
+      "tool-rect": "6:92",
+      "create": "6:99",
+      "play": "6:104",
+      "pause": "6:110",
+      "step": "6:116",
+      "undo": "6:122",
+      "redo": "6:128",
+      "more": "6:135",
+      "chev-down": "6:140",
+      "chev-right": "6:145",
+      "cam-persp": "6:152",
+      "view-lit": "6:165",
+      "gizmos": "6:173",
+      "cam-settings": "6:179",
+      "snap-grid": "6:188",
+      "snap-angle": "6:193",
+      "snap-scale": "6:202",
+      "pivot": "6:212",
+      "space-global": "6:219",
+      "stats": "6:225",
+      "frame-selected": "6:234",
+      "duplicate": "6:240",
+      "delete": "6:249",
+      "add-comp": "6:256",
+      "eye": "6:262",
+      "lock": "6:268",
+      "help": "6:275",
+      "link": "6:281",
+      "warning": "6:288",
+      "scene": "6:296",
+      "entity": "6:303",
+      "camera": "6:309",
+      "layers": "6:315",
+      "tag": "6:321",
+      "tool-transform": "6:333"
+    }
+  },
+  "telas": {
+    "baseDeTamanho": "800×360 dp (celular paisagem mais estreito comum; doc 17 §10)",
+    "status": "conceito para validação da direção visual; nada implementado"
   }
 }
