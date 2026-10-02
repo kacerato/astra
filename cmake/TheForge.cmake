@@ -3,13 +3,20 @@
 # (OS.vcxproj, Renderer.vcxproj e Tests/RendererVulkan.vcxproj). Só Vulkan.
 #
 # Alvos:
-#   tf_os        - Application, Game (Lua), OS, Resources/AnimationSystem, Utilities
-#   tf_renderer  - Graphics (Vulkan), ResourceLoader, Renderer/{ParticleSystem,VisibilityBuffer}
-#   tf_app_glue  - native_app_glue do NDK (só Android; ligado por aplicações)
+#   tf_core      - Utilities (memória, log, arquivos, threads, tempo, compressão) + partes do OS sem janela/app
+#   tf_graphics  - Graphics (Vulkan), ResourceLoader, cliente de recarga de shaders. Depende de tf_core.
+#                  É o que a Astra usa (backends/forge); a plataforma Astra fornece janela, ciclo de vida e
+#                  os dois símbolos que o renderer pede da camada de janela (gWindow, AndroidAttachToCurrentThread).
+#   tf_os        - Camada de aplicação do TF (IApp, UI ImGui, fontes, Lua, input, janela, animação).
+#                  No Android depende do native_app_glue do NativeActivity. Só para spikes que usam IApp.
+#   tf_renderer  - tf_graphics + tf_os + Renderer/{ParticleSystem,VisibilityBuffer}
+#   tf_app_glue  - native_app_glue do NDK (Android; ligado por aplicações IApp)
 #
-# Função:
+# Funções:
 #   astra_fsl_shaders(<alvo> LIST <arquivo.list> OUT_DIR <dir>)
 #     Gera e compila shaders FSL para SPIR-V (Shaders/ + CompiledShaders/ em OUT_DIR).
+#   astra_tf_runtime_files(<alvo>)
+#     Windows: copia DLLs de runtime (AGS, camada de validação) para a pasta do executável.
 
 set(TF_ROOT "${ASTRA_ROOT}/third_party/the-forge")
 set(TF_C3 "${TF_ROOT}/Common_3")
@@ -29,7 +36,33 @@ endif()
 # ---------------------------------------------------------------------------
 # Fontes
 # ---------------------------------------------------------------------------
-set(TF_OS_SOURCES
+set(TF_ZSTD_DIR ${TF_C3}/Utilities/ThirdParty/OpenSource/zstd)
+set(TF_CORE_SOURCES
+    ${TF_C3}/OS/CPUConfig.cpp
+    ${TF_C3}/Utilities/FileSystem/FileSystem.c
+    ${TF_C3}/Utilities/Log/Log.c
+    ${TF_C3}/Utilities/Math/Algorithms.c
+    ${TF_C3}/Utilities/Math/StbDs.c
+    ${TF_C3}/Utilities/MemoryTracking/MemoryTracking.c
+    ${TF_C3}/Utilities/ThirdParty/OpenSource/bstrlib/bstrlib.c
+    ${TF_C3}/Utilities/ThirdParty/OpenSource/lz4/lz4.c
+    ${TF_C3}/Utilities/Threading/ThreadSystem.c
+    ${TF_C3}/Utilities/Timer.c
+    ${TF_ZSTD_DIR}/common/debug.c
+    ${TF_ZSTD_DIR}/common/entropy_common.c
+    ${TF_ZSTD_DIR}/common/error_private.c
+    ${TF_ZSTD_DIR}/common/fse_decompress.c
+    ${TF_ZSTD_DIR}/common/pool.c
+    ${TF_ZSTD_DIR}/common/threading.c
+    ${TF_ZSTD_DIR}/common/xxhash.c
+    ${TF_ZSTD_DIR}/common/zstd_common.c
+    ${TF_ZSTD_DIR}/decompress/huf_decompress.c
+    ${TF_ZSTD_DIR}/decompress/zstd_ddict.c
+    ${TF_ZSTD_DIR}/decompress/zstd_decompress.c
+    ${TF_ZSTD_DIR}/decompress/zstd_decompress_block.c
+)
+
+set(TF_APP_SOURCES
     ${TF_C3}/Application/CameraController.cpp
     ${TF_C3}/Application/Profiler/GpuProfiler.cpp
     ${TF_C3}/Application/Profiler/ProfilerBase.cpp
@@ -45,8 +78,8 @@ set(TF_OS_SOURCES
     ${TF_C3}/Game/Scripting/LuaManager.cpp
     ${TF_C3}/Game/Scripting/LuaManagerImpl.cpp
     ${TF_C3}/Game/Scripting/LuaSystem.cpp
-    ${TF_C3}/OS/CPUConfig.cpp
     ${TF_C3}/OS/WindowSystem/WindowSystem.cpp
+    ${TF_C3}/Tools/ReloadServer/ReloadClient.cpp
     ${TF_C3}/Resources/AnimationSystem/Animation/AnimatedObject.cpp
     ${TF_C3}/Resources/AnimationSystem/Animation/Animation.cpp
     ${TF_C3}/Resources/AnimationSystem/Animation/Clip.cpp
@@ -54,92 +87,73 @@ set(TF_OS_SOURCES
     ${TF_C3}/Resources/AnimationSystem/Animation/ClipMask.cpp
     ${TF_C3}/Resources/AnimationSystem/Animation/Rig.cpp
     ${TF_C3}/Resources/AnimationSystem/Animation/SkeletonBatcher.cpp
-    ${TF_C3}/Utilities/FileSystem/FileSystem.c
-    ${TF_C3}/Utilities/Log/Log.c
-    ${TF_C3}/Utilities/Math/Algorithms.c
-    ${TF_C3}/Utilities/Math/StbDs.c
-    ${TF_C3}/Utilities/MemoryTracking/MemoryTracking.c
-    ${TF_C3}/Utilities/ThirdParty/OpenSource/bstrlib/bstrlib.c
-    ${TF_C3}/Utilities/ThirdParty/OpenSource/lz4/lz4.c
-    ${TF_C3}/Utilities/Threading/ThreadSystem.c
-    ${TF_C3}/Utilities/Timer.c
 )
-
 set(TF_LUA_DIR ${TF_C3}/Game/ThirdParty/OpenSource/lua-5.3.5/src)
 foreach(f lapi lauxlib lbaselib lbitlib lcode lcorolib lctype ldblib ldebug ldo ldump lfunc lgc linit
           liolib llex lmathlib lmem loadlib lobject lopcodes loslib lparser lstate lstring lstrlib
           ltable ltablib ltm lundump lutf8lib lvm lzio)
-    list(APPEND TF_OS_SOURCES ${TF_LUA_DIR}/${f}.c)
+    list(APPEND TF_APP_SOURCES ${TF_LUA_DIR}/${f}.c)
 endforeach()
 
-set(TF_ZSTD_DIR ${TF_C3}/Utilities/ThirdParty/OpenSource/zstd)
-list(APPEND TF_OS_SOURCES
-    ${TF_ZSTD_DIR}/common/debug.c
-    ${TF_ZSTD_DIR}/common/entropy_common.c
-    ${TF_ZSTD_DIR}/common/error_private.c
-    ${TF_ZSTD_DIR}/common/fse_decompress.c
-    ${TF_ZSTD_DIR}/common/pool.c
-    ${TF_ZSTD_DIR}/common/threading.c
-    ${TF_ZSTD_DIR}/common/xxhash.c
-    ${TF_ZSTD_DIR}/common/zstd_common.c
-    ${TF_ZSTD_DIR}/decompress/huf_decompress.c
-    ${TF_ZSTD_DIR}/decompress/zstd_ddict.c
-    ${TF_ZSTD_DIR}/decompress/zstd_decompress.c
-    ${TF_ZSTD_DIR}/decompress/zstd_decompress_block.c
-)
-
 if(TF_PLATFORM_ANDROID)
-    list(APPEND TF_OS_SOURCES
-        ${TF_C3}/OS/Android/AndroidBase.cpp
+    list(APPEND TF_CORE_SOURCES
         ${TF_C3}/OS/Android/AndroidFileSystem.cpp
-        ${TF_C3}/OS/Android/AndroidInput.cpp
         ${TF_C3}/OS/Android/AndroidLog.c
         ${TF_C3}/OS/Android/AndroidThread.c
         ${TF_C3}/OS/Android/AndroidTime.c
-        ${TF_C3}/OS/Android/AndroidWindow.cpp
         ${TF_C3}/OS/ThirdParty/OpenSource/cpu_features/src/hwcaps.c
         ${TF_C3}/OS/ThirdParty/OpenSource/cpu_features/src/impl_aarch64_linux_or_android.c
         ${TF_C3}/OS/ThirdParty/OpenSource/cpu_features/src/impl_x86_linux_or_android.c
         ${TF_C3}/Utilities/FileSystem/UnixFileSystem.c
     )
+    list(APPEND TF_APP_SOURCES
+        ${TF_C3}/OS/Android/AndroidBase.cpp
+        ${TF_C3}/OS/Android/AndroidInput.cpp
+        ${TF_C3}/OS/Android/AndroidWindow.cpp
+    )
 elseif(TF_PLATFORM_WINDOWS)
-    list(APPEND TF_OS_SOURCES
-        ${TF_C3}/OS/Windows/WindowsBase.cpp
+    list(APPEND TF_CORE_SOURCES
         ${TF_C3}/OS/Windows/WindowsFileSystem.cpp
-        ${TF_C3}/OS/Windows/WindowsInput.cpp
         ${TF_C3}/OS/Windows/WindowsLog.c
         ${TF_C3}/OS/Windows/WindowsStackTraceDump.cpp
         ${TF_C3}/OS/Windows/WindowsThread.c
         ${TF_C3}/OS/Windows/WindowsTime.c
-        ${TF_C3}/OS/Windows/WindowsWindow.cpp
         ${TF_C3}/OS/ThirdParty/OpenSource/cpu_features/src/impl_x86_windows.c
+    )
+    list(APPEND TF_APP_SOURCES
+        ${TF_C3}/OS/Windows/WindowsBase.cpp
+        ${TF_C3}/OS/Windows/WindowsInput.cpp
+        ${TF_C3}/OS/Windows/WindowsWindow.cpp
         ${TF_C3}/OS/ThirdParty/OpenSource/hidapi/windows/hid.c
     )
 endif()
 
-set(TF_RENDERER_SOURCES
+set(TF_GRAPHICS_SOURCES
     ${TF_C3}/Graphics/GraphicsConfig.cpp
     ${TF_C3}/Graphics/Vulkan/Vulkan.c
     ${TF_C3}/Graphics/Vulkan/VulkanRaytracing.c
     ${TF_C3}/Graphics/Vulkan/Vulkan_Cxx.cpp
-    ${TF_C3}/Renderer/ParticleSystem/ParticleSystem.cpp
-    ${TF_C3}/Renderer/VisibilityBuffer/VisibilityBuffer.cpp
     ${TF_C3}/Resources/ResourceLoader/ResourceLoader.cpp
     ${TF_C3}/Tools/Network/Network.c
-    ${TF_C3}/Tools/ReloadServer/ReloadClient.cpp
+)
+
+set(TF_RENDERER_EXTRA_SOURCES
+    ${TF_C3}/Renderer/ParticleSystem/ParticleSystem.cpp
+    ${TF_C3}/Renderer/VisibilityBuffer/VisibilityBuffer.cpp
 )
 
 # ---------------------------------------------------------------------------
 # Opções comuns (equivalentes a Examples_3/Build_Props/VS/TF_Shared.props)
 # ---------------------------------------------------------------------------
 add_library(tf_config INTERFACE)
-target_include_directories(tf_config INTERFACE "${TF_C3}/..")
+# Recarga de shaders do TF desligada em todo o build (patch em Config.h): depende da camada de app (UI, input).
+target_compile_definitions(tf_config INTERFACE ASTRA_FORGE_NO_RELOAD_SHADER)
+# SYSTEM: avisos dos headers do TF não contam contra o -Werror do código Astra.
+target_include_directories(tf_config SYSTEM INTERFACE "${TF_C3}/..")
 
 if(TF_PLATFORM_ANDROID)
     target_compile_definitions(tf_config INTERFACE ANDROID_ARM_NEON)
-    target_include_directories(tf_config INTERFACE
-        "${ANDROID_NDK}/sources/android/native_app_glue"
-        "${TF_C3}/OS/ThirdParty/OpenSource/agdk/include")
+    target_include_directories(tf_config SYSTEM INTERFACE "${TF_C3}/OS/ThirdParty/OpenSource/agdk/include")
 elseif(TF_PLATFORM_WINDOWS)
     target_compile_definitions(tf_config INTERFACE
         FORGE_EXPLICIT_RENDERER_API FORGE_EXPLICIT_RENDERER_API_VULKAN UNICODE _UNICODE)
@@ -157,30 +171,43 @@ function(_tf_quiet target)
     set_target_properties(${target} PROPERTIES C_STANDARD 11 CXX_STANDARD 17 CXX_EXTENSIONS OFF)
 endfunction()
 
-add_library(tf_os STATIC ${TF_OS_SOURCES})
-target_link_libraries(tf_os PUBLIC tf_config)
+add_library(tf_core STATIC ${TF_CORE_SOURCES})
+target_link_libraries(tf_core PUBLIC tf_config)
+_tf_quiet(tf_core)
+
+add_library(tf_graphics STATIC ${TF_GRAPHICS_SOURCES})
+target_link_libraries(tf_graphics PUBLIC tf_core)
+_tf_quiet(tf_graphics)
+
+add_library(tf_os STATIC ${TF_APP_SOURCES})
+target_link_libraries(tf_os PUBLIC tf_graphics)
 _tf_quiet(tf_os)
 
-add_library(tf_renderer STATIC ${TF_RENDERER_SOURCES})
+add_library(tf_renderer STATIC ${TF_RENDERER_EXTRA_SOURCES})
 target_link_libraries(tf_renderer PUBLIC tf_os)
 _tf_quiet(tf_renderer)
 
 if(TF_PLATFORM_ANDROID)
     set(TF_AGDK_LIBS "${TF_C3}/OS/ThirdParty/OpenSource/agdk/libs/arm64-v8a_cpp_static_Release")
+    target_link_libraries(tf_core PUBLIC android log atomic)
+    # Swappy (frame pacing) é chamado pelo Vulkan.c.
+    target_link_libraries(tf_graphics PUBLIC "${TF_AGDK_LIBS}/libswappy_static.a")
+    # Camada de app do TF: glue do NativeActivity, Memory Advice (AndroidBase) e Paddleboat (AndroidInput).
+    target_include_directories(tf_os PUBLIC "${ANDROID_NDK}/sources/android/native_app_glue")
     target_link_libraries(tf_os PUBLIC
         "${TF_AGDK_LIBS}/libmemory_advice_static.a"
-        "${TF_AGDK_LIBS}/libswappy_static.a"
-        "${TF_AGDK_LIBS}/libpaddleboat_static.a"
-        android log atomic)
+        "${TF_AGDK_LIBS}/libpaddleboat_static.a")
 
     add_library(tf_app_glue STATIC "${ANDROID_NDK}/sources/android/native_app_glue/android_native_app_glue.c")
     target_include_directories(tf_app_glue PUBLIC "${ANDROID_NDK}/sources/android/native_app_glue")
     _tf_quiet(tf_app_glue)
 elseif(TF_PLATFORM_WINDOWS)
-    target_link_libraries(tf_os PUBLIC setupapi xinput winmm dbghelp ws2_32 shlwapi)
+    target_link_libraries(tf_core PUBLIC dbghelp shlwapi)
+    target_link_libraries(tf_graphics PUBLIC ws2_32)
+    target_link_libraries(tf_os PUBLIC setupapi xinput winmm)
     # Extensões de fabricante usadas pelo Vulkan.c/Vulkan_Cxx.cpp no Windows (como no upstream).
     set(TF_GFX_3P "${TF_C3}/Graphics/ThirdParty/OpenSource")
-    target_link_libraries(tf_renderer PUBLIC "${TF_GFX_3P}/ags/ags_lib/lib/amd_ags_x64.lib" "${TF_GFX_3P}/nvapi/amd64/nvapi64.lib")
+    target_link_libraries(tf_graphics PUBLIC "${TF_GFX_3P}/ags/ags_lib/lib/amd_ags_x64.lib" "${TF_GFX_3P}/nvapi/amd64/nvapi64.lib")
     # DLLs que precisam ficar ao lado do executável: AGS e a camada de validação Vulkan embutida.
     set(TF_WINDOWS_RUNTIME_FILES
         "${TF_GFX_3P}/ags/ags_lib/lib/amd_ags_x64.dll"
