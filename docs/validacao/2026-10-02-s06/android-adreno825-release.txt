@@ -1,0 +1,56 @@
+S-06 flecs 4.1.6, 3 repetições
+--- repetição 1
+ChildOf  criar 100.101 entidades: 42.6 ms
+ChildOf  reparent interativo p99                            21.094 us  (orçamento    200.0) ok
+ChildOf  reordenação interativa p99 (1000 filhos)          0.313 us  (orçamento    500.0) ok
+ChildOf  reparent em lote (10 mil)                           5.362 ms  (orçamento    100.0) ok
+ChildOf  percorrer hierarquia na ordem (100 mil)             2.326 ms  (orçamento     20.0) ok
+ChildOf  aplicar 10 mil operações adiadas                  6.550 ms  (orçamento     50.0) ok
+ChildOf  destruir subárvore (10 mil)                       31.218 ms  (orçamento     50.0) ok
+Parent   criar 100.101 entidades: 58.8 ms
+Parent   reparent interativo p99                             5.469 us  (orçamento    200.0) ok
+Parent   reordenação interativa p99 (1000 filhos)          0.573 us  (orçamento    500.0) ok
+Parent   reparent em lote (10 mil)                           3.931 ms  (orçamento    100.0) ok
+Parent   percorrer hierarquia na ordem (100 mil)             1.549 ms  (orçamento     20.0) ok
+Parent   aplicar 10 mil operações adiadas                  2.332 ms  (orçamento     50.0) ok
+Parent   destruir subárvore (10 mil)                        0.655 ms  (orçamento     50.0) ok
+Multi<T> adicionar 10 mil colisores (5 mil entidades)        4.676 ms  (orçamento     20.0) ok
+Multi<T> iterar 10 mil colisores                             0.060 ms  (orçamento      1.0) ok
+Multi<T> remover 5 mil instâncias: 0.357 ms
+--- repetição 2
+ChildOf  criar 100.101 entidades: 19.9 ms
+ChildOf  reparent interativo p99                             7.187 us  (orçamento    200.0) ok
+ChildOf  reordenação interativa p99 (1000 filhos)          0.573 us  (orçamento    500.0) ok
+ChildOf  reparent em lote (10 mil)                           4.440 ms  (orçamento    100.0) ok
+ChildOf  percorrer hierarquia na ordem (100 mil)             2.180 ms  (orçamento     20.0) ok
+ChildOf  aplicar 10 mil operações adiadas                  4.720 ms  (orçamento     50.0) ok
+ChildOf  destruir subárvore (10 mil)                       34.822 ms  (orçamento     50.0) ok
+Parent   criar 100.101 entidades: 27.1 ms
+Parent   reparent interativo p99                             3.438 us  (orçamento    200.0) ok
+Parent   reordenação interativa p99 (1000 filhos)          0.313 us  (orçamento    500.0) ok
+Parent   reparent em lote (10 mil)                           1.708 ms  (orçamento    100.0) ok
+Parent   percorrer hierarquia na ordem (100 mil)             1.011 ms  (orçamento     20.0) ok
+Parent   aplicar 10 mil operações adiadas                  0.861 ms  (orçamento     50.0) ok
+Parent   destruir subárvore (10 mil)                        0.279 ms  (orçamento     50.0) ok
+Multi<T> adicionar 10 mil colisores (5 mil entidades)        1.904 ms  (orçamento     20.0) ok
+Multi<T> iterar 10 mil colisores                             0.025 ms  (orçamento      1.0) ok
+Multi<T> remover 5 mil instâncias: 0.157 ms
+--- repetição 3
+ChildOf  criar 100.101 entidades: 12.4 ms
+ChildOf  reparent interativo p99                             5.886 us  (orçamento    200.0) ok
+ChildOf  reordenação interativa p99 (1000 filhos)          0.157 us  (orçamento    500.0) ok
+ChildOf  reparent em lote (10 mil)                           1.324 ms  (orçamento    100.0) ok
+ChildOf  percorrer hierarquia na ordem (100 mil)             0.684 ms  (orçamento     20.0) ok
+ChildOf  aplicar 10 mil operações adiadas                  1.752 ms  (orçamento     50.0) ok
+ChildOf  destruir subárvore (10 mil)                        5.330 ms  (orçamento     50.0) ok
+Parent   criar 100.101 entidades: 17.8 ms
+Parent   reparent interativo p99                             2.500 us  (orçamento    200.0) ok
+Parent   reordenação interativa p99 (1000 filhos)          0.157 us  (orçamento    500.0) ok
+Parent   reparent em lote (10 mil)                           1.382 ms  (orçamento    100.0) ok
+Parent   percorrer hierarquia na ordem (100 mil)             0.747 ms  (orçamento     20.0) ok
+Parent   aplicar 10 mil operações adiadas                  0.653 ms  (orçamento     50.0) ok
+Parent   destruir subárvore (10 mil)                        0.221 ms  (orçamento     50.0) ok
+Multi<T> adicionar 10 mil colisores (5 mil entidades)        1.927 ms  (orçamento     20.0) ok
+Multi<T> iterar 10 mil colisores                             0.018 ms  (orçamento      1.0) ok
+Multi<T> remover 5 mil instâncias: 0.089 ms
+APROVADO (0 falhas)
