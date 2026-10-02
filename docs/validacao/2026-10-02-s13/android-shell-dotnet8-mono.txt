@@ -1,0 +1,27 @@
+--- rodada 1
+S13: .NET 8.0.27, .NET 8.0.27 / linux-bionic-arm64, 64 bits
+S13: Main alcançado 142 ms após o início do processo; RSS 27.2 MB
+S13: laços (20M aritmética + 20M acessos a array): 209.7 ms (aritmética 151.2, arrays 58.6); resultado 6.21048E+13
+S13: delegate vazio 1.5 ns
+S13: Roslyn compilação 1: 1447 ms (2560 B); Porta.Angulo após 0,5 s = 60
+S13: Roslyn compilação 2: 9 ms (2560 B); Porta.Angulo após 0,5 s = 60
+S13: Roslyn compilação 3: 4 ms (2560 B); Porta.Angulo após 0,5 s = 60
+S13: RSS ao final 94.3 MB
+--- rodada 2
+S13: .NET 8.0.27, .NET 8.0.27 / linux-bionic-arm64, 64 bits
+S13: Main alcançado 108 ms após o início do processo; RSS 26.9 MB
+S13: laços (20M aritmética + 20M acessos a array): 192.5 ms (aritmética 133.9, arrays 58.6); resultado 6.21048E+13
+S13: delegate vazio 1.8 ns
+S13: Roslyn compilação 1: 1228 ms (2560 B); Porta.Angulo após 0,5 s = 60
+S13: Roslyn compilação 2: 8 ms (2560 B); Porta.Angulo após 0,5 s = 60
+S13: Roslyn compilação 3: 5 ms (2560 B); Porta.Angulo após 0,5 s = 60
+S13: RSS ao final 95.0 MB
+--- rodada 3
+S13: .NET 8.0.27, .NET 8.0.27 / linux-bionic-arm64, 64 bits
+S13: Main alcançado 152 ms após o início do processo; RSS 27.4 MB
+S13: laços (20M aritmética + 20M acessos a array): 459.7 ms (aritmética 323.0, arrays 136.8); resultado 6.21048E+13
+S13: delegate vazio 4.7 ns
+S13: Roslyn compilação 1: 2323 ms (2560 B); Porta.Angulo após 0,5 s = 60
+S13: Roslyn compilação 2: 7 ms (2560 B); Porta.Angulo após 0,5 s = 60
+S13: Roslyn compilação 3: 3 ms (2560 B); Porta.Angulo após 0,5 s = 60
+S13: RSS ao final 94.9 MB

@@ -9,3 +9,6 @@ local.properties
 /third_party/the-forge/Art/
 __pycache__/
 **/android/build/
+spikes/s13_dotnet/out/
+spikes/s13_dotnet/Bench/bin/
+spikes/s13_dotnet/Bench/obj/
