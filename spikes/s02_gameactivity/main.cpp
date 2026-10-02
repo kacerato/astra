@@ -6,9 +6,17 @@
 //
 // Interação: toque curto abre/fecha o teclado. O texto digitado e a composição vão para o logcat
 // (tag The-Forge, prefixo "S02:"). Com o teclado aberto o triângulo fica azulado.
+//
+// S-05 (pré-rotação), controlado por propriedades de depuração (adb shell setprop ...):
+//   debug.astra.s02.prerotate  1 (padrão) = swapchain pré-rotacionada; 0 = rotação pelo compositor
+//   debug.astra.s02.freeze     1 = congela o giro do triângulo (capturas comparáveis)
 
 #include <android/log.h>
 #include <android/native_window.h>
+#include <sys/system_properties.h>
+
+#include <cmath>
+#include <cstdlib>
 
 #include <game-activity/GameActivity.h>
 #include <game-activity/native_app_glue/android_native_app_glue.h>
@@ -56,6 +64,12 @@ struct FrameData
     vec4 tint;
 };
 
+int readDebugProp(const char* name, int fallback)
+{
+    char value[PROP_VALUE_MAX] = {};
+    return __system_property_get(name, value) > 0 ? atoi(value) : fallback;
+}
+
 // Estado do spike. Tudo roda na thread nativa do GameActivity (android_main).
 struct Spike
 {
@@ -76,6 +90,7 @@ struct Spike
     DescriptorSet* setPersistent = nullptr;
     DescriptorSet* setPerFrame = nullptr;
     SwapChain*     swapChain = nullptr;
+    RenderTarget*  depth = nullptr; // S-05: anexo só no tile (TEXTURE_CREATION_FLAG_ON_TILE)
 
     bool     resumed = false;
     bool     keyboardVisible = false;
@@ -95,6 +110,21 @@ struct Spike
 };
 
 Spike gSpike;
+
+// Lido no máximo uma vez por segundo (propriedade de depuração, não é caminho quente de produção).
+bool readFrozen(Spike& s)
+{
+    static float sinceRead = 1.0f;
+    static bool  frozen = false;
+    (void)s;
+    sinceRead += 1.0f / 60.0f;
+    if (sinceRead >= 1.0f)
+    {
+        frozen = readDebugProp("debug.astra.s02.freeze", 0) != 0;
+        sinceRead = 0.0f;
+    }
+    return frozen;
+}
 
 // ---------------------------------------------------------------------------
 // Renderer (vive o processo inteiro; só a swapchain segue a surface)
@@ -211,6 +241,10 @@ void addPipelineFor(Spike& s, TinyImageFormat format)
 
     RasterizerStateDesc raster = {};
     raster.mCullMode = CULL_MODE_NONE;
+    DepthStateDesc depthState = {};
+    depthState.mDepthTest = true;
+    depthState.mDepthWrite = true;
+    depthState.mDepthFunc = CMP_GEQUAL;
 
     PipelineDesc desc = {};
     desc.mType = PIPELINE_TYPE_GRAPHICS;
@@ -223,6 +257,8 @@ void addPipelineFor(Spike& s, TinyImageFormat format)
     gfx.pShaderProgram = s.shader;
     gfx.pVertexLayout = &layout;
     gfx.pRasterizerState = &raster;
+    gfx.pDepthState = &depthState;
+    gfx.mDepthStencilFormat = TinyImageFormat_D32_SFLOAT;
     addPipeline(s.renderer, &desc, &s.pipeline);
     s.pipelineFormat = format;
 }
@@ -235,6 +271,8 @@ void destroySwapchain(Spike& s)
     if (!s.swapChain)
         return;
     waitQueueIdle(s.queue);
+    removeRenderTarget(s.renderer, s.depth);
+    s.depth = nullptr;
     removeSwapChain(s.renderer, s.swapChain);
     s.swapChain = nullptr;
 }
@@ -257,16 +295,37 @@ void createSwapchain(Spike& s)
     desc.mColorSpace = COLOR_SPACE_SDR_SRGB;
     desc.mEnableVsync = true;
     desc.mColorClearValue = { { 0.0033f, 0.0037f, 0.0044f, 1.0f } }; // bg.canvas #0B0C0E (linear)
+    if (readDebugProp("debug.astra.s02.prerotate", 1))
+        desc.mFlags = SWAP_CHAIN_CREATION_FLAG_PRE_ROTATION;
     addSwapChain(s.renderer, &desc, &s.swapChain);
     if (!s.swapChain)
     {
         LOGF(eERROR, "S02: addSwapChain falhou (%ux%u)", desc.mWidth, desc.mHeight);
         return;
     }
+    // Depth que nunca sai do tile: memória lazily allocated + STORE_DONTCARE (o TF força o descarte quando
+    // a memória lazily allocated é concedida).
+    RenderTargetDesc depthDesc = {};
+    depthDesc.mArraySize = 1;
+    depthDesc.mDepth = 1;
+    depthDesc.mWidth = s.swapChain->ppRenderTargets[0]->mWidth;
+    depthDesc.mHeight = s.swapChain->ppRenderTargets[0]->mHeight;
+    depthDesc.mFormat = TinyImageFormat_D32_SFLOAT;
+    depthDesc.mClearValue.depth = 0.0f;
+    depthDesc.mStartState = RESOURCE_STATE_DEPTH_WRITE;
+    depthDesc.mSampleCount = SAMPLE_COUNT_1;
+    depthDesc.mFlags = TEXTURE_CREATION_FLAG_ON_TILE;
+    depthDesc.pName = "S02Depth";
+    addRenderTarget(s.renderer, &depthDesc, &s.depth);
+    if (s.swapchainsCreated == 0)
+        LOGF(eINFO, "S02: depth ON_TILE %ux%u: memória lazily allocated %s", depthDesc.mWidth, depthDesc.mHeight,
+             s.depth->pTexture->mLazilyAllocated ? "CONCEDIDA" : "não disponível (memória comum)");
+
     addPipelineFor(s, s.swapChain->ppRenderTargets[0]->mFormat);
     ++s.swapchainsCreated;
-    LOGF(eINFO, "S02: swapchain #%u %ux%u, %u imagens, %s", s.swapchainsCreated, desc.mWidth, desc.mHeight, desc.mImageCount,
-         TinyImageFormat_Name(desc.mColorFormat));
+    RenderTarget* rt = s.swapChain->ppRenderTargets[0];
+    LOGF(eINFO, "S02: swapchain #%u janela %ux%u, imagem %ux%u, pré-rotação %u°, %u imagens, %s", s.swapchainsCreated, desc.mWidth,
+         desc.mHeight, rt->mWidth, rt->mHeight, s.swapChain->mPreRotationDegrees, desc.mImageCount, TinyImageFormat_Name(desc.mColorFormat));
 }
 
 // A surface pode mudar de tamanho sem TERM/INIT (rotação, multi-janela, dobra).
@@ -276,10 +335,14 @@ void recreateSwapchainIfResized(Spike& s)
         return;
     const uint32_t w = (uint32_t)ANativeWindow_getWidth(s.app->window);
     const uint32_t h = (uint32_t)ANativeWindow_getHeight(s.app->window);
-    RenderTarget* rt = s.swapChain->ppRenderTargets[0];
-    if (w != rt->mWidth || h != rt->mHeight)
+    // Compara na orientação lógica (a imagem pré-rotacionada em 90/270 tem largura e altura trocadas).
+    RenderTarget*  rt = s.swapChain->ppRenderTargets[0];
+    const bool     swapped = s.swapChain->mPreRotationDegrees == 90 || s.swapChain->mPreRotationDegrees == 270;
+    const uint32_t curW = swapped ? rt->mHeight : rt->mWidth;
+    const uint32_t curH = swapped ? rt->mWidth : rt->mHeight;
+    if (w != curW || h != curH)
     {
-        LOGF(eINFO, "S02: surface mudou %ux%u -> %ux%u", rt->mWidth, rt->mHeight, w, h);
+        LOGF(eINFO, "S02: surface mudou %ux%u -> %ux%u", curW, curH, w, h);
         destroySwapchain(s);
         createSwapchain(s);
     }
@@ -382,11 +445,19 @@ void drawFrame(Spike& s, float dt)
     if (!s.swapChain || !s.resumed)
         return;
 
-    s.angle += dt * 0.6f;
-    RenderTarget* rt0 = s.swapChain->ppRenderTargets[0];
-    const float   w = (float)rt0->mWidth, h = (float)rt0->mHeight;
-    FrameData     frame;
-    frame.transform = mat4::scale(w < h ? vec3(1.0f, w / h, 1.0f) : vec3(h / w, 1.0f, 1.0f)) * mat4::rotationZ(s.angle);
+    if (!readFrozen(s))
+        s.angle += dt * 0.6f;
+    // Tamanho lógico (orientação que o usuário vê) e rotação do clip-space quando a swapchain é pré-rotacionada.
+    RenderTarget*  rt0 = s.swapChain->ppRenderTargets[0];
+    const uint32_t preRot = s.swapChain->mPreRotationDegrees;
+    const bool     swapped = preRot == 90 || preRot == 270;
+    const float    w = (float)(swapped ? rt0->mHeight : rt0->mWidth);
+    const float    h = (float)(swapped ? rt0->mWidth : rt0->mHeight);
+    // Sentido validado por captura: com o viewport do TF (y invertido no Vulkan), a pré-rotação de N graus da tela
+    // corresponde a girar o clip-space em -N graus (doc 24: comparação com/sem pré-rotação, diferença ~0).
+    const mat4     preRotation = mat4::rotationZ(-(float)preRot * (float)M_PI / 180.0f);
+    FrameData      frame;
+    frame.transform = preRotation * mat4::scale(w < h ? vec3(1.0f, w / h, 1.0f) : vec3(h / w, 1.0f, 1.0f)) * mat4::rotationZ(s.angle);
     frame.tint = s.keyboardVisible ? vec4(0.55f, 0.75f, 1.0f, 1.0f) : vec4(1.0f);
 
     uint32_t imageIndex = 0;
@@ -419,6 +490,7 @@ void drawFrame(Spike& s, float dt)
     BindRenderTargetsDesc bind = {};
     bind.mRenderTargetCount = 1;
     bind.mRenderTargets[0] = { target, LOAD_ACTION_CLEAR };
+    bind.mDepthStencil = { s.depth, LOAD_ACTION_CLEAR, LOAD_ACTION_DONTCARE, STORE_ACTION_DONTCARE, STORE_ACTION_DONTCARE };
     cmdBindRenderTargets(cmd, &bind);
     cmdSetViewport(cmd, 0.0f, 0.0f, (float)target->mWidth, (float)target->mHeight, 0.0f, 1.0f);
     cmdSetScissor(cmd, 0, 0, target->mWidth, target->mHeight);
@@ -453,6 +525,19 @@ void drawFrame(Spike& s, float dt)
     present.pSwapChain = s.swapChain;
     present.mSubmitDone = true;
     queuePresent(s.queue, &present);
+
+    // Com pré-rotação, SUBOPTIMAL/OUT_OF_DATE indica que a orientação da tela mudou (ex.: giro de 180° entre as
+    // duas paisagens, que não gera mudança de configuração). Sem pré-rotação o Android pode devolver SUBOPTIMAL
+    // em todo frame, então o sinal só é usado no modo pré-rotacionado.
+    if (s.swapChain->mSuboptimal && (s.swapChain->ppRenderTargets[0] && s.swapChain->mVk.pDesc->mFlags & SWAP_CHAIN_CREATION_FLAG_PRE_ROTATION))
+    {
+        LOGF(eINFO, "S02: swapchain subótima (pré-rotação %u°); recriando", s.swapChain->mPreRotationDegrees);
+        destroySwapchain(s);
+        createSwapchain(s);
+        s.frameIndex = (s.frameIndex + 1) % kDataBufferCount;
+        ++s.framesPresented;
+        return;
+    }
 
     if (s.framesPresented == 0)
         LOGF(eINFO, "S02: primeiro frame apresentado (%ux%u)", target->mWidth, target->mHeight);
