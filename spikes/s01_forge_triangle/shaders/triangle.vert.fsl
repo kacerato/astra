@@ -1,0 +1,23 @@
+#include "resources.h.fsl"
+
+STRUCT(VSInput)
+{
+    DATA(float2, Position, POSITION);
+    DATA(float2, TexCoord, TEXCOORD0);
+};
+
+STRUCT(VSOutput)
+{
+    DATA(float4, Position, SV_Position);
+    DATA(float2, TexCoord, TEXCOORD0);
+};
+
+ROOT_SIGNATURE(DefaultRootSignature)
+VSOutput VS_MAIN(VSInput In)
+{
+    INIT_MAIN;
+    VSOutput Out;
+    Out.Position = mul(gFrame.transform, float4(In.Position, 0.0f, 1.0f));
+    Out.TexCoord = In.TexCoord;
+    RETURN(Out);
+}

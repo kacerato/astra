@@ -1,0 +1,4 @@
+[submodule "third_party/the-forge"]
+	path = third_party/the-forge
+	url = https://github.com/ConfettiFX/The-Forge.git
+	branch = astra/1.63

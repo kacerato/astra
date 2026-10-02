@@ -1,0 +1,12 @@
+#ifndef S01_RESOURCES_H
+#define S01_RESOURCES_H
+
+STRUCT(FrameData)
+{
+    DATA(float4x4, transform, None);
+    DATA(float4, tint, None);
+};
+
+#include "Global.srt.h"
+
+#endif

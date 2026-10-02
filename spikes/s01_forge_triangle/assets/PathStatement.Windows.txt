@@ -1,0 +1,15 @@
+# Diretórios de recursos do The Forge para o spike S-01 (relativos ao diretório de trabalho).
+RD_SHADER_BINARIES = CompiledShaders/
+RD_PIPELINE_CACHE = PipelineCaches/
+RD_TEXTURES = Textures/
+RD_COMPILED_MATERIALS = CompiledMaterials/
+RD_MESHES = Meshes/
+RD_FONTS = Fonts/
+RD_ANIMATIONS = Animation/
+RD_AUDIO = Audio/
+RD_GPU_CONFIG = GPUCfg/
+RD_LOG = ./
+RD_SCRIPTS = Scripts/
+RD_SCREENSHOTS = Screenshots/
+RD_DEBUG = Debug/
+RD_OTHER_FILES = ./

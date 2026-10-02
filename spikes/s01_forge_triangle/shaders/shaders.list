@@ -1,0 +1,15 @@
+#include "../../../third_party/the-forge/Common_3/Graphics/FSL/defaults.h"
+
+#rootsig default.rootsig
+#end
+
+#rootsig compute.rootsig
+#end
+
+#vert triangle.vert
+#include "triangle.vert.fsl"
+#end
+
+#frag triangle.frag
+#include "triangle.frag.fsl"
+#end

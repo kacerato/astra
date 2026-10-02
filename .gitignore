@@ -1,0 +1,11 @@
+/build/
+/out/
+.gradle/
+local.properties
+*.apk
+*.aab
+.cxx/
+.vs/
+/third_party/the-forge/Art/
+__pycache__/
+**/android/build/

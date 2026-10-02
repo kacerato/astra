@@ -1,0 +1,15 @@
+#include "resources.h.fsl"
+
+STRUCT(VSOutput)
+{
+    DATA(float4, Position, SV_Position);
+    DATA(float2, TexCoord, TEXCOORD0);
+};
+
+ROOT_SIGNATURE(DefaultRootSignature)
+float4 PS_MAIN(VSOutput In)
+{
+    INIT_MAIN;
+    float4 color = SampleTex2D(gTexture, gSampler, In.TexCoord) * gFrame.tint;
+    RETURN(color);
+}

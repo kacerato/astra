@@ -1,0 +1,16 @@
+# Diretórios de recursos do The Forge para o spike S-01.
+# "bundled" = dentro do APK (AAssetManager); os demais ficam em getExternalFilesDir().
+bundled RD_SHADER_BINARIES = CompiledShaders/
+RD_PIPELINE_CACHE = PipelineCaches/
+bundled RD_TEXTURES = Textures/
+bundled RD_COMPILED_MATERIALS = CompiledMaterials/
+bundled RD_MESHES = Meshes/
+bundled RD_FONTS = Fonts/
+bundled RD_ANIMATIONS = Animation/
+bundled RD_AUDIO = Audio/
+bundled RD_GPU_CONFIG = GPUCfg/
+RD_LOG = ./
+bundled RD_SCRIPTS = Scripts/
+RD_SCREENSHOTS = Screenshots/
+RD_DEBUG = Debug/
+bundled RD_OTHER_FILES = Other/
