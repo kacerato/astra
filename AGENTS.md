@@ -15,7 +15,7 @@ Prioridades: correção e dados → comportamento pedido → integração → si
 | Área | Situação |
 |---|---|
 | Fase | **F0** (viabilidade e fundação), ver `docs/plano-mestre/22-ROADMAP-FASES-E-GATES.md` |
-| The Forge | Submódulo `third_party/the-forge`, branch `astra/1.63` a partir da tag `v1.63` (commit em `third_party/VERSIONS.md`). Patches listados em `third_party/ASTRA_PATCHES.md` |
+| The Forge | Submódulo `third_party/the-forge` → fork privado `kacerato/astra-forge`, branch `astra/1.63` (base = árvore da tag `v1.63`; ver `third_party/VERSIONS.md`). Patches em `third_party/ASTRA_PATCHES.md`; envie o submódulo antes do repositório principal |
 | Build | CMake ≥ 3.28 + presets (`CMakePresets.json`); The Forge compilado por `cmake/TheForge.cmake` |
 | Spikes | `spikes/` (código descartável que responde uma pergunta; resultado vira ADR em `docs/adr/`). Aprovados: S-01, S-02, S-03 |
 | Renderer | A Astra liga só `tf_core` + `tf_graphics`; `tf_os`/`tf_renderer` (IApp, ImGui, Lua) só em spikes. Ver ADR-S02 |
