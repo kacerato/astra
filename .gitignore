@@ -12,3 +12,4 @@ __pycache__/
 spikes/s13_dotnet/out/
 spikes/s13_dotnet/Bench/bin/
 spikes/s13_dotnet/Bench/obj/
+.idea/
