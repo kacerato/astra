@@ -26,7 +26,7 @@ Referências: Android Game Development Kit (GameActivity, GameTextInput, Paddleb
 | `VK_ERROR_DEVICE_LOST` | Reinicializar o renderer e recarregar recursos de GPU a partir dos recursos de CPU/disco, com aviso ao usuário |
 
 - `android:configChanges` cobre orientação, tamanho, densidade, layout, teclado e `uiMode`: rotação, dobra e multi-janela **não reiniciam** a Activity.
-- Orientação por workspace: paisagem para cena e animação, retrato para a IDE de código (herdado), via JNI `setRequestedOrientation`.
+- Orientação (decisão do usuário, 02/10/2026): **tudo em paisagem** (`sensorLandscape`): hub, editor e jogos exportados por padrão. Única exceção: o workspace Script (IDE de código) pode girar para retrato, via JNI `setRequestedOrientation` ao entrar/sair dele.
 - Taxa de atualização: escolha 60/90/120 Hz com `ANativeWindow_setFrameRate` + Swappy; no editor, a taxa só vale quando há frames (render sob demanda).
 
 ## 3. Toque, caneta e mouse

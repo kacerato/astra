@@ -216,7 +216,7 @@ Desligável nas preferências.
 
 | Classe | Largura (dp) | Densidade padrão | Layout ([18](18-EDITOR-PAINEIS-E-FLUXOS.md) §2) |
 |---|---|---|---|
-| Celular retrato | < 600 | Touch | Pilha: viewport + folha com abas |
+| Celular retrato (só IDE de código) | < 600 | Touch | Pilha: código + folha com abas |
 | Celular paisagem | 600–839 (altura < 480) | Touch | Viewport cheio + trilho + gavetas |
 | Tablet | 840–1199 | Touch | Três colunas fixas + painel inferior |
 | PC / tela grande | ≥ 1200 | Compact (mouse) | Docking livre |

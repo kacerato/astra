@@ -48,7 +48,7 @@ Cada workspace guarda seu layout por classe de aparelho. Trocar de workspace man
 - **Paleta de ferramentas** na lateral do polegar dominante (espelhável); overlays reposicionáveis.
 - Com Inspector e Hierarquia abertos ao mesmo tempo, o viewport fica no meio, com pelo menos 40% da largura.
 
-### 2.2 Celular em retrato
+### 2.2 Celular em retrato (só workspace Script)
 
 ```
 ┌──────────────────────────────┐
@@ -64,7 +64,7 @@ Cada workspace guarda seu layout por classe de aparelho. Trocar de workspace man
 └──────────────────────────────┘
 ```
 
-Usado para a IDE de código, a edição longa de Inspector e a hierarquia grande. A rotação é livre, exceto no workspace Script, que fica fixo em retrato.
+O editor roda em paisagem (decisão do usuário, 02/10/2026). Este layout existe **só** no workspace Script: a IDE de código pode girar para retrato (teclado aberto, leitura longa); as abas inferiores mostram Arquivos, Console e Depurador. Os demais workspaces ficam travados em paisagem.
 
 ### 2.3 Tablet
 
