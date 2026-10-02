@@ -84,6 +84,8 @@ struct Spike
     uint64_t framesPresented = 0;
     uint32_t swapchainsCreated = 0;
     uint32_t surfacesLost = 0;
+    float    secondsSinceReport = 0.0f;
+    uint64_t framesAtLastReport = 0;
 
     std::string text;
     int32_t     composeStart = -1;
@@ -455,6 +457,16 @@ void drawFrame(Spike& s, float dt)
     if (s.framesPresented == 0)
         LOGF(eINFO, "S02: primeiro frame apresentado (%ux%u)", target->mWidth, target->mHeight);
     ++s.framesPresented;
+
+    // Resumo a cada 10 s de render (não por frame): prova que o loop segue vivo após os ciclos de surface.
+    s.secondsSinceReport += dt;
+    if (s.secondsSinceReport >= 10.0f)
+    {
+        LOGF(eINFO, "S02: %llu frames em %.1f s (total %llu)", (unsigned long long)(s.framesPresented - s.framesAtLastReport),
+             s.secondsSinceReport, (unsigned long long)s.framesPresented);
+        s.framesAtLastReport = s.framesPresented;
+        s.secondsSinceReport = 0.0f;
+    }
     s.frameIndex = (s.frameIndex + 1) % kDataBufferCount;
 }
 

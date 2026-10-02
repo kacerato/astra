@@ -17,7 +17,9 @@ Prioridades: correção e dados → comportamento pedido → integração → si
 | Fase | **F0** (viabilidade e fundação), ver `docs/plano-mestre/22-ROADMAP-FASES-E-GATES.md` |
 | The Forge | Submódulo `third_party/the-forge`, branch `astra/1.63` a partir da tag `v1.63` (commit em `third_party/VERSIONS.md`). Patches listados em `third_party/ASTRA_PATCHES.md` |
 | Build | CMake ≥ 3.28 + presets (`CMakePresets.json`); The Forge compilado por `cmake/TheForge.cmake` |
-| Spikes | `spikes/` (código descartável que responde uma pergunta; resultado vira ADR em `docs/adr/`) |
+| Spikes | `spikes/` (código descartável que responde uma pergunta; resultado vira ADR em `docs/adr/`). Aprovados: S-01, S-02, S-03 |
+| Renderer | A Astra liga só `tf_core` + `tf_graphics`; `tf_os`/`tf_renderer` (IApp, ImGui, Lua) só em spikes. Ver ADR-S02 |
+| Aparelho | `tools/device/surface_cycles.sh` (ciclos de surface). Xiaomi/MIUI: pacote novo por ADB exige "Instalar via USB" ligado; use `MSYS_NO_PATHCONV=1` no Git Bash para caminhos `/sdcard` |
 | Engine (`engine/`, `backends/`, `editor/`…) | Ainda não existe. Estrutura alvo em `docs/plano-mestre/04-ARQUITETURA-CAMADAS-E-REPOSITORIO.md` §11 |
 
 Antes da primeira alteração: `git status --short`, `git branch --show-current`, `git rev-parse HEAD`, e o mesmo dentro do submódulo quando mexer nele. Preserve alterações do usuário. Não troque branch, não faça reset, não limpe arquivos e não atualize dependências por iniciativa própria.

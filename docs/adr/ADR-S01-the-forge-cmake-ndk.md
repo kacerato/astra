@@ -19,7 +19,7 @@ Seguir com o The Forge 1.63 como backend gráfico. O build do upstream (VS2019 +
 | Textura pelo Resource Loader | `astra_checker.ktx` (KTX 1.1, RGBA8 sRGB, 9 mips) carregada nos dois alvos | log `S01: textura 256x256, 9 mips, formato R8G8B8A8_SRGB` |
 | Roda no aparelho | Xiaomi 25053PC47G, Android 16 (API 36), Adreno 825, páginas de 4 KB: swapchain 2772×1280 (paisagem), 4 imagens, ~60 fps com vsync | `docs/validacao/2026-10-02-s01/android-xiaomi-adreno825-paisagem.png` |
 | Roda no host | Intel UHD Graphics (0x8086/0xa7a8), janela 640×480 | `docs/validacao/2026-10-02-s01/host-windows-intel-uhd.png` |
-| Validação Vulkan | Camada `VK_LAYER_KHRONOS_validation` ativa nos dois alvos; **nenhuma** mensagem de validação | logcat / `AstraSpikeS01.log` |
+| Validação Vulkan | Camada `VK_LAYER_KHRONOS_validation` ativa nos dois alvos; **nenhum erro** de validação. Correção (S-02): em paisagem há um aviso de *desempenho* por swapchain, `SwapchainPreTransform` (falta de pré-rotação), não conferido na rodada em paisagem do S-01 e tratado no S-05 | logcat / `AstraSpikeS01.log` |
 | Pausa/retomada | 20 ciclos Home → reabrir: mesmo PID, 20 recriações de swapchain, 0 erros do TF | script ADB (sessão de 02/10/2026) |
 
 ## Patches no fork (ver `third_party/ASTRA_PATCHES.md`)
@@ -32,10 +32,10 @@ Seguir com o The Forge 1.63 como backend gráfico. O build do upstream (VS2019 +
 
 | Achado | Encaminhamento |
 |---|---|
-| `games-memory-advice:2.0.0-beta04` traz `libmemory_advice.so` alinhada a **4 KB** e o TensorFlow Lite (~3,4 MB + modelo) | S-02: remover o Memory Advice (o plano usa `onTrimMemory`, doc 15 §2). Bloqueia release no Play enquanto existir |
+| `games-memory-advice:2.0.0-beta04` traz `libmemory_advice.so` alinhada a **4 KB** e o TensorFlow Lite (~3,4 MB + modelo) | Resolvido no S-02: o caminho Astra não usa a camada de app do TF, então não liga Memory Advice (o plano usa `onTrimMemory`, doc 15 §2) |
 | Camada de validação embutida (1.3.275) é alinhada a 4 KB e exige `libc++_shared.so` | Só no APK de debug. Trocar por um build recente dos Vulkan-ValidationLayers (Android) antes de testar em aparelho com páginas de 16 KB |
 | `gpu.data` do TF não conhece Adreno 825 nem Intel UHD → preset `low` | Tiers próprios (doc 08 §2) na F7 |
-| `ReloadClient` loga erro por falta de `reload-server.txt` | Ruído; some quando o recarregamento de shaders do TF for desligado ou configurado (S-02) |
+| `ReloadClient` loga erro por falta de `reload-server.txt` | Resolvido no S-02: recarga de shaders do TF desligada (`ASTRA_FORGE_NO_RELOAD_SHADER`) |
 | Build de host usa o gerador Visual Studio (multi-config) em vez de Ninja | Adaptação explícita do doc 04 §12: evita depender do ambiente `vcvars` |
 | Projeto de empacotamento usa AGP 9.4.0 + Gradle 9.7.1 (já em cache) | Mantido; versões registradas aqui |
 
