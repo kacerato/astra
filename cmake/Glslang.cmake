@@ -1,0 +1,22 @@
+# glslang (KhronosGroup) para compilar GLSL → SPIR-V em runtime (shaders do usuário; spike S-04, doc 08 §4).
+# Só o front-end GLSL + gerador SPIR-V: sem HLSL, sem spirv-opt (SPIRV-Tools), sem executáveis e testes.
+set(ENABLE_HLSL OFF CACHE BOOL "" FORCE)
+set(ENABLE_OPT OFF CACHE BOOL "" FORCE)
+set(ENABLE_GLSLANG_BINARIES OFF CACHE BOOL "" FORCE)
+set(ENABLE_GLSLANG_JS OFF CACHE BOOL "" FORCE)
+set(GLSLANG_TESTS OFF CACHE BOOL "" FORCE)
+set(GLSLANG_ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
+set(BUILD_EXTERNAL OFF CACHE BOOL "" FORCE)
+set(ENABLE_PCH OFF CACHE BOOL "" FORCE)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+
+add_subdirectory("${ASTRA_ROOT}/third_party/glslang" "${CMAKE_BINARY_DIR}/third_party/glslang" EXCLUDE_FROM_ALL SYSTEM)
+foreach(t glslang glslang-default-resource-limits GenericCodeGen MachineIndependent OSDependent SPIRV)
+    if(TARGET ${t})
+        if(MSVC)
+            target_compile_options(${t} PRIVATE /W0)
+        else()
+            target_compile_options(${t} PRIVATE -w)
+        endif()
+    endif()
+endforeach()

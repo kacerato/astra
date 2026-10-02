@@ -10,6 +10,10 @@
 // S-05 (pré-rotação), controlado por propriedades de depuração (adb shell setprop ...):
 //   debug.astra.s02.prerotate  1 (padrão) = swapchain pré-rotacionada; 0 = rotação pelo compositor
 //   debug.astra.s02.freeze     1 = congela o giro do triângulo (capturas comparáveis)
+//
+// S-04 (SPIR-V fora do FSL):
+//   debug.astra.s02.shader     0 (padrão) = shaders FSL; 1 = SPIR-V compilado no PC a partir de glsl/*.vert|frag
+//                              2 = o mesmo GLSL compilado no aparelho pelo glslang (shaders do usuário, doc 08 §4)
 
 #include <android/log.h>
 #include <android/native_window.h>
@@ -23,6 +27,10 @@
 #include <game-text-input/gametextinput.h>
 
 #include <string>
+#include <vector>
+
+#include <glslang/Include/glslang_c_interface.h>
+#include <glslang/Public/resource_limits_c.h>
 
 #include "Common_3/Graphics/Interfaces/IGraphics.h"
 #include "Common_3/OS/Interfaces/IOperatingSystem.h"
@@ -127,6 +135,123 @@ bool readFrozen(Spike& s)
 }
 
 // ---------------------------------------------------------------------------
+// S-04: shader vindo de fora do FSL
+// ---------------------------------------------------------------------------
+bool readAsset(const char* path, std::vector<char>& out)
+{
+    FileStream fs = {};
+    if (!fsOpenStreamFromPath(RD_OTHER_FILES, path, FM_READ, &fs))
+        return false;
+    out.resize((size_t)fsGetStreamFileSize(&fs));
+    const bool ok = (size_t)fsReadFromStream(&fs, out.data(), (ssize_t)out.size()) == out.size();
+    fsCloseStream(&fs);
+    return ok;
+}
+
+// GLSL -> SPIR-V 1.0 (mesmo alvo do FSL) com a API C do glslang. Devolve as palavras SPIR-V, ou vazio + log.
+std::vector<uint32_t> compileGlsl(const std::vector<char>& source, glslang_stage_t stage, const char* name)
+{
+    std::string     code(source.begin(), source.end());
+    glslang_input_t input = {};
+    input.language = GLSLANG_SOURCE_GLSL;
+    input.stage = stage;
+    input.client = GLSLANG_CLIENT_VULKAN;
+    input.client_version = GLSLANG_TARGET_VULKAN_1_0;
+    input.target_language = GLSLANG_TARGET_SPV;
+    input.target_language_version = GLSLANG_TARGET_SPV_1_0;
+    input.code = code.c_str();
+    input.default_version = 450;
+    input.default_profile = GLSLANG_NO_PROFILE;
+    input.messages = GLSLANG_MSG_DEFAULT_BIT;
+    input.resource = glslang_default_resource();
+
+    std::vector<uint32_t> words;
+    glslang_shader_t*     shader = glslang_shader_create(&input);
+    glslang_program_t*    program = nullptr;
+    if (!glslang_shader_preprocess(shader, &input) || !glslang_shader_parse(shader, &input))
+    {
+        LOGF(eERROR, "S04: %s não compilou: %s", name, glslang_shader_get_info_log(shader));
+    }
+    else
+    {
+        program = glslang_program_create();
+        glslang_program_add_shader(program, shader);
+        if (!glslang_program_link(program, GLSLANG_MSG_SPV_RULES_BIT | GLSLANG_MSG_VULKAN_RULES_BIT))
+        {
+            LOGF(eERROR, "S04: %s não linkou: %s", name, glslang_program_get_info_log(program));
+        }
+        else
+        {
+            glslang_program_SPIRV_generate(program, stage);
+            const uint32_t* ptr = glslang_program_SPIRV_get_ptr(program);
+            words.assign(ptr, ptr + glslang_program_SPIRV_get_size(program));
+        }
+    }
+    if (program)
+        glslang_program_delete(program);
+    glslang_shader_delete(shader);
+    return words;
+}
+
+bool loadShader(Spike& s)
+{
+    const int mode = readDebugProp("debug.astra.s02.shader", 0);
+    if (mode == 0)
+    {
+        ShaderLoadDesc shaderDesc = {};
+        shaderDesc.mVert.pFileName = "triangle.vert";
+        shaderDesc.mFrag.pFileName = "triangle.frag";
+        addShader(s.renderer, &shaderDesc, &s.shader);
+        LOGF(eINFO, "S04: shader FSL (CompiledShaders)");
+        return s.shader != nullptr;
+    }
+
+    std::vector<uint32_t> vert, frag;
+    std::vector<char>     v, f;
+    if (mode == 1)
+    {
+        if (!readAsset("GLSL/triangle.vert.spv", v) || !readAsset("GLSL/triangle.frag.spv", f))
+            return false;
+        vert.resize(v.size() / 4);
+        frag.resize(f.size() / 4);
+        memcpy(vert.data(), v.data(), vert.size() * 4);
+        memcpy(frag.data(), f.data(), frag.size() * 4);
+        LOGF(eINFO, "S04: SPIR-V compilado no PC (vert %zu B, frag %zu B)", v.size(), f.size());
+    }
+    else
+    {
+        if (!readAsset("GLSL/triangle.vert", v) || !readAsset("GLSL/triangle.frag", f))
+            return false;
+        HiresTimer t;
+        initHiresTimer(&t);
+        glslang_initialize_process();
+        const float initMs = (float)getHiresTimerUSec(&t, true) / 1000.0f;
+        vert = compileGlsl(v, GLSLANG_STAGE_VERTEX, "triangle.vert");
+        const float vertMs = (float)getHiresTimerUSec(&t, true) / 1000.0f;
+        frag = compileGlsl(f, GLSLANG_STAGE_FRAGMENT, "triangle.frag");
+        const float fragMs = (float)getHiresTimerUSec(&t, true) / 1000.0f;
+        glslang_finalize_process();
+        if (vert.empty() || frag.empty())
+            return false;
+        LOGF(eINFO, "S04: GLSL compilado no aparelho: init %.2f ms, vert %.2f ms (%zu B), frag %.2f ms (%zu B)", initMs, vertMs,
+             vert.size() * 4, fragMs, frag.size() * 4);
+    }
+
+    BinaryShaderDesc desc = {};
+    desc.mStages = SHADER_STAGE_VERT | SHADER_STAGE_FRAG;
+    desc.mVert.pName = "triangle.vert (GLSL)";
+    desc.mVert.pByteCode = vert.data();
+    desc.mVert.mByteCodeSize = (uint32_t)(vert.size() * 4);
+    desc.mVert.pEntryPoint = "main";
+    desc.mFrag.pName = "triangle.frag (GLSL)";
+    desc.mFrag.pByteCode = frag.data();
+    desc.mFrag.mByteCodeSize = (uint32_t)(frag.size() * 4);
+    desc.mFrag.pEntryPoint = "main";
+    addShaderBinary(s.renderer, &desc, &s.shader); // o TF só usa o bytecode para criar os VkShaderModule
+    return s.shader != nullptr;
+}
+
+// ---------------------------------------------------------------------------
 // Renderer (vive o processo inteiro; só a swapchain segue a surface)
 // ---------------------------------------------------------------------------
 bool initRendererObjects(Spike& s)
@@ -192,11 +317,7 @@ bool initRendererObjects(Spike& s)
     if (!s.texture)
         return false;
 
-    ShaderLoadDesc shaderDesc = {};
-    shaderDesc.mVert.pFileName = "triangle.vert";
-    shaderDesc.mFrag.pFileName = "triangle.frag";
-    addShader(s.renderer, &shaderDesc, &s.shader);
-    if (!s.shader)
+    if (!loadShader(s))
         return false;
 
     DescriptorSetDesc persistent = SRT_SET_DESC(SrtData, Persistent, 1, 0);

@@ -15,7 +15,8 @@ set(S01_DIR "${ASTRA_ROOT}/spikes/s01_forge_triangle")
 
 add_library(astra_spike_s02 SHARED main.cpp forge_android_shim.cpp)
 target_include_directories(astra_spike_s02 PRIVATE "${S01_DIR}")
-target_link_libraries(astra_spike_s02 PRIVATE tf_graphics games_activity android log)
+target_link_libraries(astra_spike_s02 PRIVATE tf_graphics games_activity glslang glslang-default-resource-limits android log)
+target_include_directories(astra_spike_s02 SYSTEM PRIVATE "${ASTRA_ROOT}/third_party/glslang")
 # Pontos de entrada achados por dlsym/JNI a partir da lib estática do GameActivity.
 target_link_options(astra_spike_s02 PRIVATE
     "-Wl,--undefined=GameActivity_onCreate"
@@ -47,5 +48,20 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E copy "${S01_DIR}/assets/gpu.cfg" "${S02_ASSETS}/GPUCfg/gpu.cfg"
     DEPENDS "${S01_DIR}/make_texture.py" "${S01_DIR}/assets/PathStatement.Android.txt" "${S01_DIR}/assets/gpu.cfg"
     VERBATIM)
-add_custom_target(astra_spike_s02_assets DEPENDS "${S02_ASSETS}/Textures/astra_checker.ktx")
+# S-04: o GLSL à mão vai como texto (compilado no aparelho) e como SPIR-V compilado no PC pelo glslangValidator
+# embutido no TF (mesmo alvo spirv1.0 do FSL).
+set(S02_GLSL_OUT "${S02_ASSETS}/Other/GLSL")
+set(S02_GLSL_OUTPUTS)
+foreach(stage vert frag)
+    set(src "${CMAKE_CURRENT_SOURCE_DIR}/glsl/triangle.${stage}")
+    add_custom_command(
+        OUTPUT "${S02_GLSL_OUT}/triangle.${stage}" "${S02_GLSL_OUT}/triangle.${stage}.spv"
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${S02_GLSL_OUT}"
+        COMMAND ${CMAKE_COMMAND} -E copy "${src}" "${S02_GLSL_OUT}/triangle.${stage}"
+        COMMAND "${TF_GLSLANG_DIR}/glslangValidator" -V --target-env spirv1.0 "${src}" -o "${S02_GLSL_OUT}/triangle.${stage}.spv"
+        DEPENDS "${src}"
+        VERBATIM)
+    list(APPEND S02_GLSL_OUTPUTS "${S02_GLSL_OUT}/triangle.${stage}" "${S02_GLSL_OUT}/triangle.${stage}.spv")
+endforeach()
+add_custom_target(astra_spike_s02_assets DEPENDS "${S02_ASSETS}/Textures/astra_checker.ktx" ${S02_GLSL_OUTPUTS})
 add_dependencies(astra_spike_s02 astra_spike_s02_assets)
