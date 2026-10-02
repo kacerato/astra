@@ -18,6 +18,7 @@ Prioridades: correção e dados → comportamento pedido → integração → si
 | The Forge | Submódulo `third_party/the-forge` → fork privado `kacerato/astra-forge`, branch `astra/1.63` (base = árvore da tag `v1.63`; ver `third_party/VERSIONS.md`). Patches em `third_party/ASTRA_PATCHES.md`; envie o submódulo antes do repositório principal |
 | Build | CMake ≥ 3.28 + presets (`CMakePresets.json`); The Forge compilado por `cmake/TheForge.cmake` |
 | Spikes | `spikes/` (código descartável que responde uma pergunta; resultado vira ADR em `docs/adr/`). Aprovados: S-01, S-02, S-03, S-04, S-05 (medição de banda pendente), S-06, S-07 (fatia A; fatia B pendente), S-08 |
+| Scripts | Luau + C# (ADR-D12b, decisão do usuário); C# depende do spike S-13 |
 | Renderer | A Astra liga só `tf_core` + `tf_graphics`; `tf_os`/`tf_renderer` (IApp, ImGui, Lua) só em spikes. Ver ADR-S02 |
 | Aparelho | `tools/device/surface_cycles.sh` (ciclos de surface). Xiaomi/MIUI: pacote novo por ADB exige "Instalar via USB" ligado; use `MSYS_NO_PATHCONV=1` no Git Bash para caminhos `/sdcard` |
 | Engine (`engine/`, `backends/`, `editor/`…) | Ainda não existe. Estrutura alvo em `docs/plano-mestre/04-ARQUITETURA-CAMADAS-E-REPOSITORIO.md` §11 |

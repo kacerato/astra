@@ -22,6 +22,7 @@ Um spike tem prazo máximo, pergunta binária e saída registrada como ADR. Esto
 | **S-10** | Jolt com jobs Astra no aparelho: 1.000 corpos, determinismo no mesmo build | 2 dias | Tempo medido; replays iguais | Ajustar workers/camadas |
 | **S-11** | Montar APK no aparelho: manifesto/recursos, zipalign, apksig, instalação manual | 5 dias | APK de teste instala e roda em outro aparelho | Template com placeholders; só export pelo PC |
 | **S-12** | miniaudio no Android: latência AAudio, troca de rota Bluetooth, foco | 2 dias | Sem silêncio permanente nem crash | Oboe como saída |
+| **S-13** | C# (CoreCLR, como na Astra atual) como segunda linguagem vale o custo no aparelho? (ADR-D12b) | 5 dias | Tamanho, memória, inicialização, compilação no aparelho e velocidade medidos lado a lado com o Luau; ganho justifica o custo | C# só em jogos exportados (AOT) ou só no PC |
 
 S-01 a S-08 fazem parte da **F0**. S-09 roda antes da F3, S-10 antes da F5, S-12 antes da F9 e S-11 durante a F6, para reduzir o risco da F12 cedo.
 
