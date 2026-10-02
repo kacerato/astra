@@ -20,7 +20,7 @@ Prioridades: correção e dados → comportamento pedido → integração → si
 | Spikes | `spikes/` (código descartável que responde uma pergunta; resultado vira ADR em `docs/adr/`). Aprovados: S-01, S-02, S-03, S-04, S-05 (medição de banda pendente), S-06, S-07 (fatia A; fatia B pendente), S-08, S-13 |
 | Scripts | Luau (padrão) + C# opcional por projeto para cálculo pesado (ADR-D12b, ADR-S13) |
 | Renderer | A Astra liga só `tf_core` + `tf_graphics`; `tf_os`/`tf_renderer` (IApp, ImGui, Lua) só em spikes. Ver ADR-S02 |
-| CI | `.github/workflows/ci.yml`: `tools/check-layering`, `tools/licenses` (gera `THIRD_PARTY_NOTICES.md`; confere `ninja -t deps` do build Android), build `android-arm64-release` e `host-windows-vs2022`. Submódulo privado via segredo `ASTRA_FORGE_DEPLOY_KEY` (chave de implantação somente leitura no `astra-forge`). Biblioteca ou componente novo do TF: linha em `third_party/VERSIONS.md` e rodar `python tools/licenses/licenses.py` |
+| CI | `.github/workflows/ci.yml`: `tools/check-layering`, `tools/licenses` (gera `THIRD_PARTY_NOTICES.md`; confere `ninja -t deps` do build Android), build `android-arm64-release` e `host-windows`. Submódulo privado via segredo `ASTRA_FORGE_DEPLOY_KEY` (chave de implantação somente leitura no `astra-forge`). Biblioteca ou componente novo do TF: linha em `third_party/VERSIONS.md` e rodar `python tools/licenses/licenses.py` |
 | Aparelho | `tools/device/surface_cycles.sh` (ciclos de surface). Xiaomi/MIUI: pacote novo por ADB exige "Instalar via USB" ligado; use `MSYS_NO_PATHCONV=1` no Git Bash para caminhos `/sdcard` |
 | Engine (`engine/`, `backends/`, `editor/`…) | Ainda não existe. Estrutura alvo em `docs/plano-mestre/04-ARQUITETURA-CAMADAS-E-REPOSITORIO.md` §11 |
 

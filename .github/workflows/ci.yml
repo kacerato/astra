@@ -19,7 +19,7 @@ jobs:
     name: camadas e licenças
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/submodules
         with:
           forge-key: ${{ secrets.ASTRA_FORGE_DEPLOY_KEY }}
@@ -30,7 +30,7 @@ jobs:
     name: android-arm64-release
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/submodules
         with:
           forge-key: ${{ secrets.ASTRA_FORGE_DEPLOY_KEY }}
@@ -45,12 +45,15 @@ jobs:
       - run: python3 tools/licenses/licenses.py --check --build build/android-arm64-release
 
   host:
-    name: host-windows (VS 2022)
+    name: host-windows
     runs-on: windows-2025
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/submodules
         with:
           forge-key: ${{ secrets.ASTRA_FORGE_DEPLOY_KEY }}
-      - run: cmake --preset host-windows-vs2022
-      - run: cmake --build --preset host-windows-vs2022-release --parallel
+      - name: Visual Studio do runner
+        shell: bash
+        run: '/c/Program Files (x86)/Microsoft Visual Studio/Installer/vswhere.exe' -all -products '*' -format text | grep -E '^(displayName|installationVersion):'
+      - run: cmake --preset host-windows
+      - run: cmake --build --preset host-windows-release --parallel

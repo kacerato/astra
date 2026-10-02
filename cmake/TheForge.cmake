@@ -132,7 +132,7 @@ set(TF_GRAPHICS_SOURCES
     ${TF_C3}/Graphics/GraphicsConfig.cpp
     ${TF_C3}/Graphics/Vulkan/Vulkan.c
     ${TF_C3}/Graphics/Vulkan/VulkanRaytracing.c
-    ${TF_C3}/Graphics/Vulkan/Vulkan_Cxx.cpp
+    ${TF_C3}/Graphics/Vulkan/Vulkan_cxx.cpp
     ${TF_C3}/Resources/ResourceLoader/ResourceLoader.cpp
     ${TF_C3}/Tools/Network/Network.c
 )
@@ -205,7 +205,7 @@ elseif(TF_PLATFORM_WINDOWS)
     target_link_libraries(tf_core PUBLIC dbghelp shlwapi)
     target_link_libraries(tf_graphics PUBLIC ws2_32)
     target_link_libraries(tf_os PUBLIC setupapi xinput winmm)
-    # Extensões de fabricante usadas pelo Vulkan.c/Vulkan_Cxx.cpp no Windows (como no upstream).
+    # Extensões de fabricante usadas pelo Vulkan.c/Vulkan_cxx.cpp no Windows (como no upstream).
     set(TF_GFX_3P "${TF_C3}/Graphics/ThirdParty/OpenSource")
     target_link_libraries(tf_graphics PUBLIC "${TF_GFX_3P}/ags/ags_lib/lib/amd_ags_x64.lib" "${TF_GFX_3P}/nvapi/amd64/nvapi64.lib")
     # DLLs que precisam ficar ao lado do executável: AGS e a camada de validação Vulkan embutida.
