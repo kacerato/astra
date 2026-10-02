@@ -4,7 +4,9 @@ name: ci
 on:
   push:
     branches: [main]
+    paths-ignore: ['docs/**', 'design/**']
   pull_request:
+    paths-ignore: ['docs/**', 'design/**']
   workflow_dispatch:
 
 concurrency:
