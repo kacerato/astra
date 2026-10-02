@@ -11,6 +11,13 @@
       "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
     },
     {
+      "name": "host-windows-vs2022",
+      "displayName": "Host Windows (Vulkan, VS 2022; CI)",
+      "inherits": "host-windows",
+      "generator": "Visual Studio 17 2022",
+      "binaryDir": "${sourceDir}/build/host-windows-vs2022"
+    },
+    {
       "name": "android-arm64-base",
       "hidden": true,
       "generator": "Ninja",
@@ -37,6 +44,7 @@
   "buildPresets": [
     { "name": "host-windows-debug", "configurePreset": "host-windows", "configuration": "Debug" },
     { "name": "host-windows-release", "configurePreset": "host-windows", "configuration": "Release" },
+    { "name": "host-windows-vs2022-release", "configurePreset": "host-windows-vs2022", "configuration": "Release" },
     { "name": "android-arm64-debug", "configurePreset": "android-arm64-debug" },
     { "name": "android-arm64-release", "configurePreset": "android-arm64-release" }
   ]

@@ -1,0 +1,56 @@
+# CI mínimo da F0 (E-0.4, doc 20 §4): camadas + licenças, build Android arm64 e build host Windows.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NDK_VERSION: 29.0.14206865
+
+jobs:
+  checks:
+    name: camadas e licenças
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/submodules
+        with:
+          forge-key: ${{ secrets.ASTRA_FORGE_DEPLOY_KEY }}
+      - run: python3 tools/check-layering/check_layering.py
+      - run: python3 tools/licenses/licenses.py --check
+
+  android:
+    name: android-arm64-release
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/submodules
+        with:
+          forge-key: ${{ secrets.ASTRA_FORGE_DEPLOY_KEY }}
+      - name: NDK e Ninja
+        run: |
+          sudo apt-get install -y --no-install-recommends ninja-build
+          yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --install "ndk;$NDK_VERSION" > /dev/null
+          echo "ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/$NDK_VERSION" >> "$GITHUB_ENV"
+      - run: cmake --preset android-arm64-release
+      - run: cmake --build --preset android-arm64-release
+      # Licenças conferidas contra o que realmente entrou no build (ninja -t deps).
+      - run: python3 tools/licenses/licenses.py --check --build build/android-arm64-release
+
+  host:
+    name: host-windows (VS 2022)
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/submodules
+        with:
+          forge-key: ${{ secrets.ASTRA_FORGE_DEPLOY_KEY }}
+      - run: cmake --preset host-windows-vs2022
+      - run: cmake --build --preset host-windows-vs2022-release --parallel

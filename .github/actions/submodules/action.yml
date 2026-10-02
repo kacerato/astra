@@ -1,0 +1,25 @@
+name: Submódulos
+description: Busca os submódulos fixados; o The Forge vem do fork privado pela chave de implantação (somente leitura).
+inputs:
+  forge-key:
+    description: Chave SSH privada da chave de implantação do kacerato/astra-forge
+    required: true
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        FORGE_KEY: ${{ inputs.forge-key }}
+      run: |
+        if [ -z "$FORGE_KEY" ]; then
+          echo "::error::Segredo ASTRA_FORGE_DEPLOY_KEY ausente: sem ele o submódulo privado third_party/the-forge não é buscado."
+          exit 1
+        fi
+        mkdir -p ~/.ssh
+        printf '%s\n' "$FORGE_KEY" > ~/.ssh/astra_forge
+        chmod 600 ~/.ssh/astra_forge
+        ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts 2>/dev/null
+        git config --global url."git@github.com:kacerato/astra-forge".insteadOf https://github.com/kacerato/astra-forge
+        export GIT_SSH_COMMAND="ssh -i ~/.ssh/astra_forge -o IdentitiesOnly=yes"
+        git submodule update --init --depth 1 --jobs 6
+        git submodule status
