@@ -1,0 +1,15 @@
+S08: Luau 0.740 (64, 64 bits)
+S08: binding get+set de vector: genérico 219.1 ns/iter, rápido (átomo) 122.6 ns/iter
+S08: chamada C++->Luau (função vazia) 33.1 ns; Luau->C++ 19.8 ns
+S08: erro de propriedade: erro:1: Transform não tem a propriedade 'inexistente'
+S08: 100 mil operações de vector: 0 alocações
+S08: laço infinito interrompido em 100.0 ms (limite 100 ms): tempo excedido em Porta.luau:2
+S08: limite de memória: código 4, uso no erro 8.2 MB, limite 8.2 MB
+S08: após coleta, uso 0.29 MB
+S08: parado em Contador.luau:5, locais: total=15 ; 120 quadros do editor rodaram durante a pausa
+S08: retomado; resultado 30 (esperado 30), paradas 2
+S08: sandbox: sandbox:1: attempt to modify a readonly table; io=ausente os.execute=ausente
+S08: codegen nativo suportado nesta plataforma: sim
+S08: codegen: 3 de 3 funções compiladas, 3002 B de código nativo
+S08: laços (20M aritmética + 20M acessos a array): interpretador 866.0 ms, nativo 484.3 ms (1.79x)
+S08: APROVADO (0 falhas)

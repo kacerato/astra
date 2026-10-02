@@ -15,7 +15,7 @@ set(S01_DIR "${ASTRA_ROOT}/spikes/s01_forge_triangle")
 
 add_library(astra_spike_s02 SHARED main.cpp forge_android_shim.cpp)
 target_include_directories(astra_spike_s02 PRIVATE "${S01_DIR}")
-target_link_libraries(astra_spike_s02 PRIVATE tf_graphics games_activity glslang glslang-default-resource-limits android log)
+target_link_libraries(astra_spike_s02 PRIVATE tf_graphics games_activity glslang glslang-default-resource-limits astra_s08_suite android log)
 target_include_directories(astra_spike_s02 SYSTEM PRIVATE "${ASTRA_ROOT}/third_party/glslang")
 # Pontos de entrada achados por dlsym/JNI a partir da lib estática do GameActivity.
 target_link_options(astra_spike_s02 PRIVATE

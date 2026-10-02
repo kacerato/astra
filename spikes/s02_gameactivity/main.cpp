@@ -14,6 +14,9 @@
 // S-04 (SPIR-V fora do FSL):
 //   debug.astra.s02.shader     0 (padrão) = shaders FSL; 1 = SPIR-V compilado no PC a partir de glsl/*.vert|frag
 //                              2 = o mesmo GLSL compilado no aparelho pelo glslang (shaders do usuário, doc 08 §4)
+//
+// S-08 (Luau no contexto de app, onde a política de memória executável difere da do adb shell):
+//   debug.astra.s02.luau       1 = roda a suíte do S-08 uma vez ao iniciar (resultado no log, prefixo "S08:")
 
 #include <android/log.h>
 #include <android/native_window.h>
@@ -44,6 +47,8 @@
 
 #include "Common_3/Graphics/FSL/defaults.h"
 #include "shaders/Global.srt.h"
+
+#include "luau_suite.h" // spike S-08
 
 #include "Common_3/Utilities/Interfaces/IMemory.h"
 
@@ -741,6 +746,8 @@ extern "C" void android_main(android_app* app)
         return;
     initLog(kAppName, DEFAULT_LOG_LEVEL);
     LOGF(eINFO, "S02: android_main (GameActivity, SDK %d)", act->sdkVersion);
+    if (readDebugProp("debug.astra.s02.luau", 0))
+        runLuauSuite([](const char* line) { LOGF(eINFO, "%s", line); });
 
     const bool rendererOk = initRendererObjects(s);
     if (!rendererOk)
