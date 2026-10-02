@@ -36,9 +36,21 @@
     "tokens",
     "estilos",
     "paginas",
-    "prancha-fundamentos"
+    "prancha-fundamentos",
+    "marca-vetorizada"
   ],
   "nos": {
-    "pranchaFundamentos": "3:2"
+    "pranchaFundamentos": "3:2",
+    "pranchaMarca": "4:2",
+    "marca256": "4:7",
+    "marca64": "4:14",
+    "marca24": "4:21",
+    "glyph": "4:29"
+  },
+  "marca": {
+    "fonte": "atchengine/assets/astra-visual/brand/astra-mark-512.png",
+    "gerador": "tools/brand/trace_mark.py",
+    "svg": ["design/brand/astra-mark.svg", "design/brand/astra-glyph.svg"],
+    "diferencaDePixels": "1,02%"
   }
 }
